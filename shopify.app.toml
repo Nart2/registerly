@@ -2,14 +2,14 @@
 
 name = "Registerly"
 client_id = "73f248c289b0fbb52a0be5e790bf503c"
-application_url = "https://example.com"
+application_url = "https://registerly.onrender.com"
 embedded = true
 
 [access_scopes]
 scopes = "read_products,read_orders"
 
 [auth]
-redirect_urls = [ "https://example.com/auth/callback" ]
+redirect_urls = [ "https://registerly.onrender.com/auth/callback" ]
 
 [webhooks]
 api_version = "2024-10"
@@ -21,7 +21,7 @@ uri = "/webhooks"
 [app_proxy]
 subpath = "registerly"
 prefix = "apps"
-url = "https://example.com"
+url = "https://registerly.onrender.com"
 
 [pos]
 embedded = false
