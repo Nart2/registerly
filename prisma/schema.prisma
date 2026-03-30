@@ -1,0 +1,227 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Shopify session storage (required by @shopify/shopify-app-session-storage-prisma)
+model Session {
+  id            String    @id
+  shop          String
+  state         String
+  isOnline      Boolean   @default(false)
+  scope         String?
+  expires       DateTime?
+  accessToken   String?
+  userId        BigInt?
+  firstName     String?
+  lastName      String?
+  email         String?
+  accountOwner  Boolean   @default(false)
+  locale        String?
+  collaborator  Boolean?  @default(false)
+  emailVerified Boolean?  @default(false)
+}
+
+model Shop {
+  id          String    @id @default(cuid())
+  domain      String    @unique
+  email       String?
+  plan        PlanType  @default(FREE)
+  brandColor  String    @default("#2563eb")
+  brandLogo   String?
+
+  // GDPR
+  dataProcessingConsent Boolean @default(false)
+
+  products       Product[]
+  registrations  Registration[]
+  emailTemplates EmailTemplate[]
+  serialNumbers  SerialNumber[]
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+enum PlanType {
+  FREE
+  STARTER
+  GROWTH
+  PRO
+}
+
+model Product {
+  id                String    @id @default(cuid())
+  shopId            String
+  shop              Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  shopifyProductId  String
+  name              String
+  warrantyMonths    Int       @default(12)
+  isActive          Boolean   @default(true)
+
+  // Improvement: require serial number validation
+  requireSerialNumber Boolean @default(false)
+
+  registrations  Registration[]
+  serialNumbers  SerialNumber[]
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([shopId, shopifyProductId])
+  @@index([shopId])
+}
+
+// Improvement: Serial number import for validation
+model SerialNumber {
+  id          String    @id @default(cuid())
+  shopId      String
+  shop        Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  serialNumber String
+  isUsed      Boolean   @default(false)
+
+  createdAt   DateTime  @default(now())
+
+  @@unique([shopId, serialNumber])
+  @@index([productId])
+  @@index([shopId, serialNumber])
+}
+
+model Registration {
+  id              String    @id @default(cuid())
+  shopId          String
+  shop            Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  productId       String
+  product         Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  customerName    String
+  customerEmail   String
+  customerPhone   String?
+  serialNumber    String?
+  purchaseDate    DateTime
+  purchaseChannel PurchaseChannel @default(SHOPIFY)
+  proofOfPurchaseUrl String?
+
+  status          RegistrationStatus @default(PENDING)
+  warrantyExpiresAt DateTime?
+
+  // GDPR improvement
+  consentGiven    Boolean   @default(false)
+  consentTimestamp DateTime?
+
+  // Warranty expiry notification tracking
+  expiryNotificationSent Boolean @default(false)
+
+  // Shopify order reference (if auto-registered)
+  shopifyOrderId  String?
+
+  claims          Claim[]
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([shopId])
+  @@index([customerEmail])
+  @@index([status])
+  @@index([warrantyExpiresAt])
+  @@index([shopId, status])
+}
+
+enum PurchaseChannel {
+  SHOPIFY
+  AMAZON
+  RETAIL
+  OTHER
+}
+
+enum RegistrationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Claim {
+  id                String    @id @default(cuid())
+  registrationId    String
+  registration      Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+
+  issueDescription  String
+  issueType         IssueType
+  status            ClaimStatus @default(OPEN)
+  merchantNotes     String?
+
+  // Improvement: file attachments for claims
+  attachmentUrls    String[]
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([registrationId])
+  @@index([status])
+}
+
+enum IssueType {
+  DEFECTIVE
+  DAMAGED
+  MISSING_PARTS
+  OTHER
+}
+
+enum ClaimStatus {
+  OPEN
+  IN_REVIEW
+  APPROVED
+  REJECTED
+  RESOLVED
+}
+
+model EmailTemplate {
+  id      String    @id @default(cuid())
+  shopId  String
+  shop    Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  type    EmailTemplateType
+  subject String
+  body    String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([shopId, type])
+}
+
+enum EmailTemplateType {
+  REGISTRATION_CONFIRM
+  WARRANTY_EXPIRY
+  CLAIM_RECEIVED
+  CLAIM_UPDATE
+}
+
+// Improvement: Rate limiting tracking
+model RateLimit {
+  id        String   @id @default(cuid())
+  shopId    String
+  month     String   // format: "2024-01"
+  count     Int      @default(0)
+
+  @@unique([shopId, month])
+}
+
+// Improvement: GDPR data deletion requests
+model DataDeletionRequest {
+  id            String   @id @default(cuid())
+  shopId        String
+  customerEmail String
+  status        DeletionStatus @default(PENDING)
+  requestedAt   DateTime @default(now())
+  completedAt   DateTime?
+}
+
+enum DeletionStatus {
+  PENDING
+  COMPLETED
+}

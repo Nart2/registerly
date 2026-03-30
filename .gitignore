@@ -1,0 +1,11 @@
+node_modules
+.cache
+build
+public/build
+.env
+*.local
+.DS_Store
+prisma/*.db
+.claude/
+.claude-flow/
+.mcp.json

@@ -1,0 +1,27 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+name = "Registerly"
+client_id = "73f248c289b0fbb52a0be5e790bf503c"
+application_url = "https://example.com"
+embedded = true
+
+[access_scopes]
+scopes = "read_products,read_orders"
+
+[auth]
+redirect_urls = [ "https://example.com/auth/callback" ]
+
+[webhooks]
+api_version = "2024-10"
+
+[[webhooks.subscriptions]]
+topics = [ "orders/paid" ]
+uri = "/webhooks"
+
+[app_proxy]
+subpath = "registerly"
+prefix = "apps"
+url = "https://example.com"
+
+[pos]
+embedded = false
