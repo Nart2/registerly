@@ -1,6 +1,6 @@
-import { json } from "@remix-run/node";
+import { json, redirect } from "@remix-run/node";
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
-import { useLoaderData, useSubmit, useNavigation } from "@remix-run/react";
+import { useLoaderData, useSubmit, useNavigation, useActionData } from "@remix-run/react";
 import {
   Page,
   Layout,
@@ -29,6 +29,23 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   const usage = await checkRegistrationLimit(shop.id);
 
+  // Check if returning from Shopify billing confirmation
+  const url = new URL(request.url);
+  const chargeConfirmed = url.searchParams.get("charge_confirmed");
+  const newPlan = url.searchParams.get("plan") as PlanType | null;
+
+  if (chargeConfirmed === "true" && newPlan) {
+    try {
+      const { confirmSubscription } = await import("~/services/billing.server");
+      const { admin } = await authenticate.admin(request);
+      await confirmSubscription(admin, session.shop, newPlan);
+    } catch (e) {
+      console.error("Failed to confirm subscription:", e);
+    }
+    // Redirect to clean URL
+    return redirect("/app/billing");
+  }
+
   return json({
     currentPlan: shop.plan,
     usage: {
@@ -40,7 +57,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  const { session, admin } = await authenticate.admin(request);
   const formData = await request.formData();
   const intent = formData.get("intent") as string;
 
@@ -48,9 +65,36 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   if (!shop) throw new Response("Shop not found", { status: 404 });
 
   if (intent === "upgrade") {
-    // Plan changes are disabled until Shopify billing API integration is complete.
-    // Direct DB updates would allow free plan bypassing.
-    return json({ error: "Plan changes are not yet available. Shopify billing integration coming soon." }, { status: 400 });
+    const newPlan = formData.get("plan") as PlanType;
+
+    const validPlans: PlanType[] = ["FREE", "STARTER", "GROWTH", "PRO"];
+    if (!validPlans.includes(newPlan)) {
+      return json({ error: "Invalid plan selected" }, { status: 400 });
+    }
+
+    // Don't allow "upgrading" to current plan
+    if (newPlan === shop.plan) {
+      return json({ error: "You are already on this plan" }, { status: 400 });
+    }
+
+    try {
+      const { createSubscription } = await import("~/services/billing.server");
+      const appUrl = process.env.APP_URL || "https://registerly.onrender.com";
+      const returnUrl = `${appUrl}/app/billing?charge_confirmed=true&plan=${newPlan}`;
+
+      const result = await createSubscription(admin, shop, newPlan, returnUrl);
+
+      // For FREE plan (cancellation), redirect directly
+      if (newPlan === "FREE") {
+        return redirect("/app/billing");
+      }
+
+      // For paid plans, redirect to Shopify's confirmation page
+      return redirect(result.confirmationUrl);
+    } catch (e: any) {
+      console.error("Billing error:", e);
+      return json({ error: e.message || "Failed to process plan change" }, { status: 500 });
+    }
   }
 
   return json({ error: "Unknown intent" }, { status: 400 });
@@ -58,6 +102,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 export default function BillingPage() {
   const { currentPlan, usage, plans } = useLoaderData<typeof loader>();
+  const actionData = useActionData<typeof action>();
   const submit = useSubmit();
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
@@ -87,11 +132,13 @@ export default function BillingPage() {
   return (
     <Page title="Billing & Plans">
       <BlockStack gap="500">
-        <Banner tone="warning">
-          <Text as="p" variant="bodyMd">
-            Shopify billing integration coming soon. Plan changes are currently manual.
-          </Text>
-        </Banner>
+        {(actionData as any)?.error && (
+          <Banner tone="critical">
+            <Text as="p" variant="bodyMd">
+              {(actionData as any).error}
+            </Text>
+          </Banner>
+        )}
 
         <Layout>
           <Layout.Section>
@@ -205,6 +252,7 @@ export default function BillingPage() {
                       disabled={isCurrent || isSubmitting}
                       onClick={() => handlePlanChange(plan.type)}
                       fullWidth
+                      loading={isSubmitting}
                     >
                       {isCurrent
                         ? "Current Plan"
