@@ -16,15 +16,15 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   return json({ registration });
 };
 
-function statusColor(status: string) {
+function statusBadgeClass(status: string) {
   switch (status) {
-    case "APPROVED": return "bg-green-100 text-green-800";
-    case "PENDING": return "bg-yellow-100 text-yellow-800";
-    case "REJECTED": return "bg-red-100 text-red-800";
-    case "OPEN": return "bg-blue-100 text-blue-800";
-    case "IN_REVIEW": return "bg-purple-100 text-purple-800";
-    case "RESOLVED": return "bg-green-100 text-green-800";
-    default: return "bg-gray-100 text-gray-800";
+    case "APPROVED": return "badge-success";
+    case "PENDING": return "badge-warning";
+    case "REJECTED": return "badge-error";
+    case "OPEN": return "badge-info";
+    case "IN_REVIEW": return "badge-info";
+    case "RESOLVED": return "badge-success";
+    default: return "badge-info";
   }
 }
 
@@ -51,16 +51,14 @@ function getMonthsRemaining(expiresAt: string | null): string {
   return `${months} month${months !== 1 ? "s" : ""} remaining`;
 }
 
-function statusBadgeClass(status: string) {
-  switch (status) {
-    case "APPROVED": return "badge-success";
-    case "PENDING": return "badge-warning";
-    case "REJECTED": return "badge-error";
-    case "OPEN": return "badge-info";
-    case "IN_REVIEW": return "badge-info";
-    case "RESOLVED": return "badge-success";
-    default: return "badge-info";
-  }
+function formatDate(dateStr: string): string {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+}
+
+function formatDateFull(dateStr: string): string {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
 export default function PortalPage() {
@@ -70,123 +68,111 @@ export default function PortalPage() {
 
   const reg = registration as any;
   const isWarrantyActive = reg.status === "APPROVED" && reg.warrantyExpiresAt && new Date(reg.warrantyExpiresAt) > new Date();
-  const brandColor = reg.shop?.brandColor || "#2563eb";
+  const brandColor = reg.shop?.brandColor || "#4F46E5";
   const warrantyProgress = getWarrantyProgress(reg.purchaseDate, reg.warrantyExpiresAt);
   const monthsRemaining = getMonthsRemaining(reg.warrantyExpiresAt);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Colored Hero Header */}
-      <div className="hero-section">
-        <div className="max-w-2xl mx-auto px-4 pt-10 pb-16 sm:pt-14 sm:pb-20">
-          {justRegistered ? (
-            <div className="mb-6 text-center">
-              <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-green-400/20 mb-4">
-                <svg className="w-7 h-7 text-green-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <h1 className="text-3xl font-bold text-white">You're all set!</h1>
-              <p className="text-brand-200 mt-2 text-sm">Your product is registered and protected. We'll review it shortly.</p>
-              <p className="text-brand-300 mt-1 text-xs">ID: {reg.id.slice(0, 8)}</p>
+    <div className="min-h-screen bg-surface">
+      {/* Thin accent bar */}
+      <div className="h-1 bg-brand-600" />
+
+      {/* Header */}
+      <div className="max-w-2xl mx-auto px-4 pt-10 pb-6">
+        {justRegistered ? (
+          <div className="text-center">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-emerald-50 mb-4">
+              <svg className="w-7 h-7 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+              </svg>
             </div>
-          ) : (
-            <>
-              <h1 className="text-2xl font-bold text-white">Your Product Registration</h1>
-              <p className="text-brand-200 mt-1 text-sm">ID: {reg.id.slice(0, 8)}</p>
-            </>
-          )}
-        </div>
+            <h1 className="text-2xl font-bold text-gray-900">You're all set!</h1>
+            <p className="text-sm text-gray-500 mt-1.5">Your product is registered and protected. We'll review it shortly.</p>
+            <p className="text-xs text-gray-400 mt-1">ID: {reg.id.slice(0, 8)}</p>
+          </div>
+        ) : (
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Your Product Registration</h1>
+            <p className="text-sm text-gray-400 mt-1">ID: {reg.id.slice(0, 8)}</p>
+          </div>
+        )}
       </div>
 
-      {/* Main Card - pulled up into hero */}
-      <div className="max-w-2xl mx-auto px-4 -mt-8 sm:-mt-12 pb-10">
-        <div className="card shadow-lg mb-6">
+      {/* Main Card */}
+      <div className="max-w-2xl mx-auto px-4 pb-10">
+        <div className="card mb-6" style={{ borderTop: '3px solid #4F46E5' }}>
           {/* Product heading + status */}
           <div className="flex items-start justify-between gap-4">
             <div>
               <h2 className="text-xl font-bold text-gray-900">{reg.product.name}</h2>
             </div>
-            <div className="text-right">
+            <div className="text-right shrink-0">
               <span className={statusBadgeClass(reg.status)}>{reg.status}</span>
               {reg.status === "PENDING" && (
-                <p className="text-sm text-gray-500 mt-1.5">We're reviewing your registration — usually within 24 hours</p>
+                <p className="text-xs text-gray-400 mt-1.5">Usually reviewed within 24 hours</p>
               )}
             </div>
           </div>
 
           {/* Info Grid */}
-          <div className="mt-8 grid grid-cols-2 gap-x-6 gap-y-5">
-            <InfoField
-              icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />}
-              label="Customer Name"
-              value={reg.customerName}
-            />
-            <InfoField
-              icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />}
-              label="Email"
-              value={reg.customerEmail}
-            />
+          <div className="mt-8 grid grid-cols-2 gap-x-6 gap-y-4">
+            <InfoField label="Customer Name" value={reg.customerName} />
+            <InfoField label="Email" value={reg.customerEmail} />
             {reg.serialNumber && (
-              <InfoField
-                icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />}
-                label="Serial Number"
-                value={reg.serialNumber}
-              />
+              <InfoField label="Serial Number" value={reg.serialNumber} />
             )}
-            <InfoField
-              icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />}
-              label="Purchase Date"
-              value={new Date(reg.purchaseDate).toLocaleDateString()}
-            />
-            <InfoField
-              icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" />}
-              label="Channel"
-              value={reg.purchaseChannel}
-            />
-            <InfoField
-              icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />}
-              label="Warranty Expires"
-              value={reg.warrantyExpiresAt ? new Date(reg.warrantyExpiresAt).toLocaleDateString() : "N/A"}
-            />
+            <InfoField label="Purchase Date" value={formatDateFull(reg.purchaseDate)} />
+            <InfoField label="Channel" value={reg.purchaseChannel} />
+            <InfoField label="Warranty Expires" value={reg.warrantyExpiresAt ? formatDateFull(reg.warrantyExpiresAt) : "N/A"} />
           </div>
 
           {/* Warranty Timeline */}
-          <div className="mt-8 p-5 rounded-xl bg-gray-50 border border-gray-100">
+          <div className="mt-8 p-5 rounded-lg bg-gray-50 border border-gray-100">
             <div className="flex items-center justify-between mb-3">
               <p className="text-sm font-semibold text-gray-700">Warranty Status</p>
-              <p className={`text-sm font-medium ${isWarrantyActive ? "text-green-600" : reg.status === "PENDING" ? "text-brand-600" : "text-red-600"}`}>
+              <p className={`text-sm font-medium ${isWarrantyActive ? "text-emerald-600" : reg.status === "PENDING" ? "text-brand-600" : "text-red-600"}`}>
                 {isWarrantyActive ? monthsRemaining : reg.status === "PENDING" ? "Pending Approval" : "Expired"}
               </p>
             </div>
-            <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div className="w-full bg-gray-200 rounded-full overflow-hidden" style={{ height: '6px' }}>
               <div
-                className={`h-full rounded-full transition-all duration-500 ${isWarrantyActive ? "bg-green-500" : reg.status === "PENDING" ? "bg-brand-500" : "bg-red-400"}`}
+                className={`h-full rounded-full transition-all duration-500 ${isWarrantyActive ? "bg-emerald-500" : reg.status === "PENDING" ? "bg-brand-500" : "bg-red-400"}`}
                 style={{ width: `${reg.status === "PENDING" ? 10 : warrantyProgress}%` }}
               />
             </div>
             <div className="flex justify-between mt-2 text-xs text-gray-400">
-              <span>{new Date(reg.purchaseDate).toLocaleDateString()}</span>
-              <span>{reg.warrantyExpiresAt ? new Date(reg.warrantyExpiresAt).toLocaleDateString() : "N/A"}</span>
+              <span>{formatDate(reg.purchaseDate)}</span>
+              <span>{reg.warrantyExpiresAt ? formatDate(reg.warrantyExpiresAt) : "N/A"}</span>
             </div>
           </div>
 
           {/* Next Steps */}
           <div className="mt-6 pt-6 border-t border-gray-100">
-            <p className="text-sm font-medium text-gray-700 mb-3">What's next?</p>
-            <div className="space-y-2">
-              <p className="text-sm text-gray-500 flex items-center gap-2">
-                <svg className="w-4 h-4 text-brand-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+            <p className="text-sm font-semibold text-gray-700 mb-3">What's next?</p>
+            <div className="space-y-2.5">
+              <p className="text-sm text-gray-500 flex items-center gap-2.5">
+                <svg className="w-5 h-5 text-brand-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
                 Check your email for a confirmation
               </p>
-              <p className="text-sm text-gray-500 flex items-center gap-2">
-                <svg className="w-4 h-4 text-brand-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
+              <p className="text-sm text-gray-500 flex items-center gap-2.5">
+                <svg className="w-5 h-5 text-brand-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
                 Bookmark this page to check your status
               </p>
-              <p className="text-sm text-gray-500 flex items-center gap-2">
-                <svg className="w-4 h-4 text-brand-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
-                Submit a claim if you experience any issues
-              </p>
+              {isWarrantyActive && (
+                <Link
+                  to={`/claim/${reg.id}/new`}
+                  className="text-sm text-brand-600 font-medium flex items-center gap-2.5 hover:text-brand-700 transition-colors"
+                >
+                  <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                  Submit a claim if you experience any issues
+                </Link>
+              )}
+              {!isWarrantyActive && (
+                <p className="text-sm text-gray-500 flex items-center gap-2.5">
+                  <svg className="w-5 h-5 text-brand-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                  Submit a claim if you experience any issues
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -207,10 +193,10 @@ export default function PortalPage() {
         {/* Claims List */}
         {reg.claims && reg.claims.length > 0 && (
           <div className="card">
-            <h3 className="text-lg font-semibold text-gray-900 mb-5">Your Claims</h3>
+            <h3 className="text-base font-semibold text-gray-900 mb-5">Your Claims</h3>
             <div className="space-y-3">
               {reg.claims.map((claim: any) => (
-                <div key={claim.id} className="p-4 border border-gray-100 rounded-xl bg-gray-50/50 hover:bg-gray-50 transition-colors">
+                <div key={claim.id} className="p-4 border border-gray-100 rounded-lg bg-gray-50/50 hover:bg-gray-50 transition-colors">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
@@ -223,7 +209,7 @@ export default function PortalPage() {
                       )}
                     </div>
                   </div>
-                  <p className="text-xs text-gray-400 mt-2.5">Submitted {new Date(claim.createdAt).toLocaleDateString()}</p>
+                  <p className="text-xs text-gray-400 mt-2.5">Submitted {formatDateFull(claim.createdAt)}</p>
                 </div>
               ))}
             </div>
@@ -231,27 +217,22 @@ export default function PortalPage() {
         )}
 
         {/* Footer */}
-        <div className="flex items-center justify-center gap-1.5 mt-10">
-          <svg className="w-3.5 h-3.5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="flex items-center justify-center gap-1.5 mt-10 py-4">
+          <svg className="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
           </svg>
-          <p className="text-xs text-gray-400">Secured by <span className="text-brand-600 font-medium">Registerly</span></p>
+          <p className="text-xs text-gray-400 tracking-wide">Secured by <span className="text-brand-600 font-medium">Registerly</span></p>
         </div>
       </div>
     </div>
   );
 }
 
-function InfoField({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function InfoField({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-start gap-3">
-      <svg className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        {icon}
-      </svg>
-      <div className="min-w-0">
-        <p className="text-xs text-gray-500 uppercase tracking-wide">{label}</p>
-        <p className="text-sm font-medium text-gray-900 mt-0.5 truncate">{value}</p>
-      </div>
+    <div className="min-w-0">
+      <p className="text-xs text-gray-400 uppercase font-semibold" style={{ fontSize: '11px', letterSpacing: '0.05em' }}>{label}</p>
+      <p className="text-sm font-medium text-gray-900 mt-0.5 truncate">{value}</p>
     </div>
   );
 }

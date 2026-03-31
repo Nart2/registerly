@@ -55,7 +55,6 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
   const shopDomain = params.shopDomain;
   if (!shopDomain) throw new Response("Shop not found", { status: 404 });
 
-  // IP-based rate limiting: 10 submissions per minute per IP
   const rl = rateLimitMiddleware(request, { maxRequests: 10, windowMs: 60_000 });
   if (!rl.allowed) {
     return json(
@@ -67,7 +66,6 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
   const shop = await prisma.shop.findUnique({ where: { domain: shopDomain } });
   if (!shop) throw new Response("Shop not found", { status: 404 });
 
-  // Check registration limit
   const limitCheck = await checkRegistrationLimit(shop.id);
   if (!limitCheck.allowed) {
     return json(
@@ -103,7 +101,6 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
 
     await incrementRegistrationCount(shop.id);
 
-    // Send confirmation email
     try {
       await sendEmail({
         to: registration.customerEmail,
@@ -135,35 +132,29 @@ export default function RegisterPage() {
   const errors = (actionData as any)?.errors || {};
   const [step, setStep] = useState(1);
 
-  const stepLabels = ["Choose your product", "Tell us about yourself", "Complete registration"];
+  const stepLabels = ["Choose product", "Your details", "Confirm"];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Colored Hero Header */}
-      <div className="hero-section">
-        <div className="max-w-xl mx-auto px-4 pt-12 pb-20 sm:pt-16 sm:pb-24 text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-5 bg-white/15 backdrop-blur-sm">
-            <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
-          </div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">Register Your Product</h1>
-          <p className="text-brand-200 mt-2 text-base">Get warranty protection in 60 seconds</p>
-          {step === 1 && (
-            <div className="flex flex-col items-center gap-1 mt-3">
-              <span className="text-brand-200 text-sm flex items-center gap-2">&#10003; Track your product anytime</span>
-              <span className="text-brand-200 text-sm flex items-center gap-2">&#10003; Easy warranty claims</span>
-              <span className="text-brand-200 text-sm flex items-center gap-2">&#10003; Fast customer support</span>
-            </div>
-          )}
+    <div className="min-h-screen bg-surface">
+      {/* Thin accent bar */}
+      <div className="h-1 bg-brand-600" />
+
+      {/* Page header — clean, minimal */}
+      <div className="max-w-xl mx-auto px-4 pt-10 pb-6 text-center">
+        <div className="flex items-center justify-center gap-2.5 mb-3">
+          <svg className="w-7 h-7 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Register Your Product</h1>
         </div>
+        <p className="text-sm text-gray-500">Get warranty protection in 60 seconds</p>
       </div>
 
-      {/* Form Card - pulled up into hero */}
-      <div className="max-w-xl mx-auto px-4 -mt-12 sm:-mt-16 pb-10">
-        <div className="card shadow-lg">
+      {/* Form Card */}
+      <div className="max-w-xl mx-auto px-4 pb-10">
+        <div className="card">
           {errors._form && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl text-red-700 text-sm flex items-start gap-3">
+            <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-lg text-red-700 text-sm flex items-start gap-3">
               <svg className="w-5 h-5 text-red-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
               </svg>
@@ -171,26 +162,38 @@ export default function RegisterPage() {
             </div>
           )}
 
-          {/* Step Indicator */}
-          <div className="flex items-center justify-center mb-4">
+          {/* Stepper */}
+          <div className="flex items-center justify-center mb-2">
             {[1, 2, 3].map((s) => (
               <React.Fragment key={s}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${
-                  step > s ? 'bg-brand-600 text-white' : step === s ? 'bg-brand-600 text-white ring-4 ring-brand-100' : 'bg-gray-200 text-gray-500'
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-150 ${
+                  step > s
+                    ? 'bg-brand-600 text-white'
+                    : step === s
+                    ? 'bg-brand-600 text-white ring-4 ring-brand-100'
+                    : 'bg-white text-gray-400 border-2 border-gray-200'
                 }`}>
                   {step > s ? (
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
                   ) : s}
                 </div>
-                {s < 3 && <div className={`w-12 h-0.5 ${step > s ? 'bg-brand-600' : 'bg-gray-200'}`} />}
+                {s < 3 && (
+                  <div className={`w-12 sm:w-16 h-0.5 transition-colors duration-150 ${step > s ? 'bg-brand-600' : 'bg-gray-200'}`} style={{ height: '2px' }} />
+                )}
               </React.Fragment>
             ))}
           </div>
 
-          {/* Step Label */}
-          <p className="text-center text-sm font-medium text-gray-500 mb-8">{stepLabels[step - 1]}</p>
+          {/* All step labels always visible */}
+          <div className="flex justify-center gap-4 sm:gap-10 mb-8">
+            {stepLabels.map((label, i) => (
+              <span key={i} className={`text-xs transition-colors ${step === i + 1 ? 'text-brand-600 font-semibold' : 'text-gray-400'}`}>
+                {label}
+              </span>
+            ))}
+          </div>
 
-          <Form method="post" className="space-y-8">
+          <Form method="post" className="space-y-6">
             {/* Step 1: Product Selection */}
             <div className={step !== 1 ? "hidden" : undefined}>
               <p className="section-title">Product Selection</p>
@@ -206,14 +209,28 @@ export default function RegisterPage() {
                   <option value="">Select your product...</option>
                   {products.map((p: any) => (
                     <option key={p.id} value={p.id}>
-                      {p.name} ({p.warrantyMonths} months warranty)
+                      {p.name} — {p.warrantyMonths} months warranty
                     </option>
                   ))}
                 </select>
                 {errors.productId && <p className="text-red-500 text-sm mt-1.5">{errors.productId}</p>}
               </div>
 
-              {/* Step 1 Navigation */}
+              <div className="mt-5 p-4 bg-brand-50 rounded-lg">
+                <p className="text-xs text-gray-500 flex items-center gap-2">
+                  <svg className="w-3.5 h-3.5 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                  Track your product anytime
+                </p>
+                <p className="text-xs text-gray-500 flex items-center gap-2 mt-1">
+                  <svg className="w-3.5 h-3.5 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                  Easy warranty claims
+                </p>
+                <p className="text-xs text-gray-500 flex items-center gap-2 mt-1">
+                  <svg className="w-3.5 h-3.5 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                  Fast customer support
+                </p>
+              </div>
+
               <div className="flex justify-end mt-6">
                 <button
                   type="button"
@@ -248,13 +265,8 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              {/* Step 2 Navigation */}
               <div className="flex justify-between mt-6">
-                <button
-                  type="button"
-                  onClick={() => setStep(1)}
-                  className="px-6 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                >
+                <button type="button" onClick={() => setStep(1)} className="btn-outline px-6 text-sm">
                   Back
                 </button>
                 <button
@@ -295,11 +307,10 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              {/* Confirmation */}
               <div className="mt-6">
                 <p className="section-title">Confirmation</p>
-                <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl">
-                  <input type="checkbox" id="consent" name="consent" className="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500" required />
+                <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
+                  <input type="checkbox" id="consent" name="consent" className="checkbox-brand mt-0.5" required />
                   <label htmlFor="consent" className="text-sm text-gray-600 leading-relaxed">
                     I agree to the storage and processing of my data for warranty purposes. I can request deletion at any time.
                   </label>
@@ -307,13 +318,8 @@ export default function RegisterPage() {
                 {errors.consent && <p className="text-red-500 text-sm mt-1.5">{errors.consent}</p>}
               </div>
 
-              {/* Step 3 Navigation */}
               <div className="flex justify-between mt-6">
-                <button
-                  type="button"
-                  onClick={() => setStep(2)}
-                  className="px-6 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                >
+                <button type="button" onClick={() => setStep(2)} className="btn-outline px-6 text-sm">
                   Back
                 </button>
                 <button
@@ -330,11 +336,11 @@ export default function RegisterPage() {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-center gap-1.5 mt-8">
-          <svg className="w-3.5 h-3.5 text-brand-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="flex items-center justify-center gap-1.5 mt-8 py-4">
+          <svg className="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
           </svg>
-          <p className="text-xs text-gray-400">Secured by <span className="text-brand-600 font-medium">Registerly</span></p>
+          <p className="text-xs text-gray-400 tracking-wide">Secured by <span className="text-brand-600 font-medium">Registerly</span></p>
         </div>
       </div>
     </div>

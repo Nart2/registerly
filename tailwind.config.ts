@@ -5,6 +5,7 @@ export default {
   theme: {
     extend: {
       colors: {
+        surface: "#FAFBFC",
         brand: {
           50: "#eef2ff",
           100: "#e0e7ff",
@@ -17,6 +18,9 @@ export default {
           800: "#3730a3",
           900: "#312e81",
         },
+      },
+      fontFamily: {
+        sans: ["Inter", "-apple-system", "BlinkMacSystemFont", "'Segoe UI'", "sans-serif"],
       },
     },
   },
