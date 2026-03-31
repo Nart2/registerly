@@ -7,11 +7,11 @@ async function seed() {
 
   // Create a demo shop
   const shop = await prisma.shop.upsert({
-    where: { domain: "demo-store.myshopify.com" },
+    where: { domain: "registerly-2.myshopify.com" },
     create: {
-      domain: "demo-store.myshopify.com",
+      domain: "registerly-2.myshopify.com",
       email: "demo@example.com",
-      plan: "GROWTH",
+      plan: "FREE",
     },
     update: {},
   });

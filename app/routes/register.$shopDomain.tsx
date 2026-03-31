@@ -5,6 +5,7 @@ import { z } from "zod";
 import prisma from "~/db.server";
 import { createRegistration } from "~/services/registration.server";
 import { checkRegistrationLimit, incrementRegistrationCount } from "~/services/billing.server";
+import { rateLimitMiddleware } from "~/services/ratelimit.server";
 import { sendEmail } from "~/services/email.server";
 import tailwindStyles from "~/styles/tailwind.css?url";
 
@@ -52,6 +53,15 @@ export const loader = async ({ params, request }: LoaderFunctionArgs) => {
 export const action = async ({ params, request }: ActionFunctionArgs) => {
   const shopDomain = params.shopDomain;
   if (!shopDomain) throw new Response("Shop not found", { status: 404 });
+
+  // IP-based rate limiting: 10 submissions per minute per IP
+  const rl = rateLimitMiddleware(request, { maxRequests: 10, windowMs: 60_000 });
+  if (!rl.allowed) {
+    return json(
+      { errors: { _form: "Too many requests. Please wait a moment before trying again." } },
+      { status: 429, headers: rl.headers },
+    );
+  }
 
   const shop = await prisma.shop.findUnique({ where: { domain: shopDomain } });
   if (!shop) throw new Response("Shop not found", { status: 404 });
