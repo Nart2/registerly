@@ -74,34 +74,34 @@ export default function PortalPage() {
 
   return (
     <div className="min-h-screen bg-surface">
-      {/* Soft gradient header area */}
+      {/* Colored header */}
       <div style={{ background: justRegistered
-        ? 'linear-gradient(180deg, #ECFDF5 0%, #F0FDF8 40%, #FAFBFC 100%)'
-        : 'linear-gradient(180deg, #EEF2FF 0%, #F5F7FF 60%, #FAFBFC 100%)'
+        ? 'linear-gradient(135deg, #059669 0%, #10B981 50%, #34D399 100%)'
+        : 'linear-gradient(135deg, #4F46E5 0%, #6366F1 50%, #818CF8 100%)'
       }}>
-        <div className="max-w-2xl mx-auto px-4 pt-12 pb-10">
+        <div className="max-w-2xl mx-auto px-4 pt-10 pb-16">
           {justRegistered ? (
             <div className="text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white shadow-sm mb-4">
-                <svg className="w-8 h-8 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm mb-4">
+                <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h1 className="text-2xl font-bold text-gray-900">You're all set!</h1>
-              <p className="text-sm text-gray-500 mt-1.5">Your product is registered and protected. We'll review it shortly.</p>
-              <p className="text-xs text-gray-400 mt-1">ID: {reg.id.slice(0, 8)}</p>
+              <h1 className="text-2xl font-bold text-white">You're all set!</h1>
+              <p className="text-emerald-100 text-sm mt-1.5">Your product is registered and protected. We'll review it shortly.</p>
+              <p className="text-emerald-200/70 text-xs mt-1">ID: {reg.id.slice(0, 8)}</p>
             </div>
           ) : (
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Your Product Registration</h1>
-              <p className="text-sm text-gray-400 mt-1">ID: {reg.id.slice(0, 8)}</p>
+              <h1 className="text-2xl font-bold text-white">Your Product Registration</h1>
+              <p className="text-indigo-200 text-sm mt-1">ID: {reg.id.slice(0, 8)}</p>
             </div>
           )}
         </div>
       </div>
 
-      {/* Main Card — pulled up into gradient transition */}
-      <div className="max-w-2xl mx-auto px-4 -mt-4 pb-10">
+      {/* Main Card — overlaps the colored header */}
+      <div className="max-w-2xl mx-auto px-4 -mt-8 pb-10">
         <div className="card mb-6" style={{ borderTop: '3px solid #4F46E5' }}>
           {/* Product heading + status */}
           <div className="flex items-start justify-between gap-4">
