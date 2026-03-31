@@ -97,7 +97,7 @@ export default function DashboardPage() {
               <BlockStack gap="300">
                 <Text as="h2" variant="headingMd">Quick Actions</Text>
                 <Text as="p" tone="subdued">
-                  Registration link: {process.env.APP_URL || "https://your-app.railway.app"}/register/{shop.domain}
+                  Registration link: {process.env.APP_URL || "https://registerly.onrender.com"}/register/{shop.domain}
                 </Text>
               </BlockStack>
             </Card>
