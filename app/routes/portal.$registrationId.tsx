@@ -74,32 +74,34 @@ export default function PortalPage() {
 
   return (
     <div className="min-h-screen bg-surface">
-      {/* Thin accent bar */}
-      <div className="h-1 bg-brand-600" />
-
-      {/* Header */}
-      <div className="max-w-2xl mx-auto px-4 pt-10 pb-6">
-        {justRegistered ? (
-          <div className="text-center">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-emerald-50 mb-4">
-              <svg className="w-7 h-7 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-              </svg>
+      {/* Soft gradient header area */}
+      <div style={{ background: justRegistered
+        ? 'linear-gradient(180deg, #ECFDF5 0%, #F0FDF8 40%, #FAFBFC 100%)'
+        : 'linear-gradient(180deg, #EEF2FF 0%, #F5F7FF 60%, #FAFBFC 100%)'
+      }}>
+        <div className="max-w-2xl mx-auto px-4 pt-12 pb-10">
+          {justRegistered ? (
+            <div className="text-center">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white shadow-sm mb-4">
+                <svg className="w-8 h-8 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h1 className="text-2xl font-bold text-gray-900">You're all set!</h1>
+              <p className="text-sm text-gray-500 mt-1.5">Your product is registered and protected. We'll review it shortly.</p>
+              <p className="text-xs text-gray-400 mt-1">ID: {reg.id.slice(0, 8)}</p>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">You're all set!</h1>
-            <p className="text-sm text-gray-500 mt-1.5">Your product is registered and protected. We'll review it shortly.</p>
-            <p className="text-xs text-gray-400 mt-1">ID: {reg.id.slice(0, 8)}</p>
-          </div>
-        ) : (
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Your Product Registration</h1>
-            <p className="text-sm text-gray-400 mt-1">ID: {reg.id.slice(0, 8)}</p>
-          </div>
-        )}
+          ) : (
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Your Product Registration</h1>
+              <p className="text-sm text-gray-400 mt-1">ID: {reg.id.slice(0, 8)}</p>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Main Card */}
-      <div className="max-w-2xl mx-auto px-4 pb-10">
+      {/* Main Card — pulled up into gradient transition */}
+      <div className="max-w-2xl mx-auto px-4 -mt-4 pb-10">
         <div className="card mb-6" style={{ borderTop: '3px solid #4F46E5' }}>
           {/* Product heading + status */}
           <div className="flex items-start justify-between gap-4">

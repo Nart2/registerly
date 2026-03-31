@@ -136,22 +136,21 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen bg-surface">
-      {/* Thin accent bar */}
-      <div className="h-1 bg-brand-600" />
-
-      {/* Page header — clean, minimal */}
-      <div className="max-w-xl mx-auto px-4 pt-10 pb-6 text-center">
-        <div className="flex items-center justify-center gap-2.5 mb-3">
-          <svg className="w-7 h-7 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-          </svg>
+      {/* Soft gradient header area */}
+      <div style={{ background: 'linear-gradient(180deg, #EEF2FF 0%, #F5F7FF 60%, #FAFBFC 100%)' }}>
+        <div className="max-w-xl mx-auto px-4 pt-12 pb-8 text-center">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white shadow-sm mb-4">
+            <svg className="w-7 h-7 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+          </div>
           <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Register Your Product</h1>
+          <p className="text-sm text-gray-500 mt-1.5">Get warranty protection in 60 seconds</p>
         </div>
-        <p className="text-sm text-gray-500">Get warranty protection in 60 seconds</p>
       </div>
 
-      {/* Form Card */}
-      <div className="max-w-xl mx-auto px-4 pb-10">
+      {/* Form Card — pulled up slightly into the gradient */}
+      <div className="max-w-xl mx-auto px-4 -mt-2 pb-10">
         <div className="card">
           {errors._form && (
             <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-lg text-red-700 text-sm flex items-start gap-3">
