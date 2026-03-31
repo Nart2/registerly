@@ -17,6 +17,7 @@ import {
 } from "@shopify/polaris";
 import { authenticate } from "~/shopify.server";
 import prisma from "~/db.server";
+import { hasFeature } from "~/services/billing.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session } = await authenticate.admin(request);
@@ -44,7 +45,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     });
   }
 
-  const { hasFeature } = await import("~/services/billing.server");
   if (!hasFeature(shop.plan, "analytics")) {
     return json({
       gated: true,
@@ -273,8 +273,8 @@ export default function AnalyticsPage() {
       ? Math.round((approvedCount / totalRegistrations) * 100)
       : 0;
 
-  const totalClaims = Object.values(claimsByStatus).reduce(
-    (sum, v) => sum + v,
+  const totalClaims = Object.values(claimsByStatus as Record<string, number>).reduce(
+    (sum: number, v: number) => sum + v,
     0,
   );
   const claimsRate =
@@ -315,7 +315,7 @@ export default function AnalyticsPage() {
     }
   };
 
-  const channelRows = Object.entries(channelBreakdown).map(
+  const channelRows = Object.entries(channelBreakdown as Record<string, number>).map(
     ([channel, count]) => {
       const pct =
         totalRegistrations > 0
@@ -476,11 +476,11 @@ export default function AnalyticsPage() {
                 </Text>
               ) : (
                 <BlockStack gap="200">
-                  {Object.entries(claimsByStatus).map(([status, count]) => (
+                  {Object.entries(claimsByStatus as Record<string, number>).map(([status, count]) => (
                     <InlineStack key={status} align="space-between">
                       <Badge tone={claimStatusTone(status)}>{status.replace("_", " ")}</Badge>
                       <Text as="p" fontWeight="semibold">
-                        {count}
+                        {String(count)}
                       </Text>
                     </InlineStack>
                   ))}
@@ -490,7 +490,7 @@ export default function AnalyticsPage() {
                       Total
                     </Text>
                     <Text as="p" fontWeight="bold">
-                      {totalClaims}
+                      {String(totalClaims)}
                     </Text>
                   </InlineStack>
                 </BlockStack>
@@ -508,7 +508,7 @@ export default function AnalyticsPage() {
                 columnContentTypes={["text", "numeric", "text"]}
                 headings={["Channel", "Count", "Share"]}
                 rows={channelRows}
-                totals={["", totalRegistrations, "100%"]}
+                totals={["", totalRegistrations as number, "100%"]}
               />
             </BlockStack>
           </Card>

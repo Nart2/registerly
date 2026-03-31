@@ -19,6 +19,7 @@ import {
 import { useState, useCallback } from "react";
 import { authenticate } from "~/shopify.server";
 import { getEmailTemplates, upsertEmailTemplate } from "~/services/email.server";
+import { hasFeature } from "~/services/billing.server";
 import prisma from "~/db.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -28,7 +29,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   const templates = await getEmailTemplates(shop.id);
   const appUrl = process.env.APP_URL || "https://registerly.onrender.com";
-  const { hasFeature } = await import("~/services/billing.server");
   const canEditTemplates = hasFeature(shop.plan, "customTemplates");
   const canEditBranding = hasFeature(shop.plan, "brandColor");
   return json({ shop: { ...shop, appUrl }, templates, canEditTemplates, canEditBranding });
@@ -43,7 +43,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   if (!shop) throw new Response("Shop not found", { status: 404 });
 
   if (intent === "updateTemplate") {
-    const { hasFeature } = await import("~/services/billing.server");
     if (!hasFeature(shop.plan, "customTemplates")) {
       return json({ error: "Custom email templates require the Starter plan or higher. Upgrade to customize templates." }, { status: 403 });
     }
@@ -55,11 +54,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   }
 
   if (intent === "updateBranding") {
-    const { hasFeature } = await import("~/services/billing.server");
     if (!hasFeature(shop.plan, "brandColor")) {
       return json({ error: "Custom brand colors require the Starter plan or higher." }, { status: 403 });
     }
     const brandColor = formData.get("brandColor") as string;
+    // Validate hex color to prevent CSS injection
+    if (!/^#[0-9a-fA-F]{3,8}$/.test(brandColor)) {
+      return json({ error: "Invalid color format. Please use a hex color (e.g. #4F46E5)." }, { status: 400 });
+    }
     await prisma.shop.update({
       where: { id: shop.id },
       data: { brandColor },

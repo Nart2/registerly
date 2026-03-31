@@ -8,17 +8,16 @@ import {
   IndexTable,
   Text,
   Badge,
-  Filters,
-  ChoiceList,
   Button,
   InlineStack,
   BlockStack,
   Box,
   Pagination,
 } from "@shopify/polaris";
-import { useState, useCallback } from "react";
+import { useCallback } from "react";
 import { authenticate } from "~/shopify.server";
 import { getRegistrations, updateRegistrationStatus } from "~/services/registration.server";
+import { sendEmail } from "~/services/email.server";
 import prisma from "~/db.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -67,7 +66,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   // Send confirmation email if approved
   if (status === "APPROVED") {
     try {
-      const { sendEmail } = await import("~/services/email.server");
       await sendEmail({
         to: registration.customerEmail,
         shopId: shop.id,
@@ -92,7 +90,6 @@ export default function RegistrationsPage() {
   const { registrations, total, page, totalPages, products } = useLoaderData<typeof loader>();
   const submit = useSubmit();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [queryValue, setQueryValue] = useState(searchParams.get("search") || "");
 
   const handleStatusChange = useCallback(
     (registrationId: string, status: string) => {

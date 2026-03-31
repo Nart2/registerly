@@ -5,7 +5,7 @@ import React, { useState } from "react";
 import { z } from "zod";
 import prisma from "~/db.server";
 import { createRegistration } from "~/services/registration.server";
-import { checkRegistrationLimit, incrementRegistrationCount } from "~/services/billing.server";
+import { checkRegistrationLimit, incrementRegistrationCount, hasFeature } from "~/services/billing.server";
 import { rateLimitMiddleware } from "~/services/ratelimit.server";
 import { sendEmail } from "~/services/email.server";
 import tailwindStyles from "~/styles/tailwind.css?url";
@@ -39,7 +39,6 @@ export const loader = async ({ params, request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const preselectedProduct = url.searchParams.get("product");
 
-  const { hasFeature } = await import("~/services/billing.server");
   const whiteLabel = hasFeature(shop.plan, "whiteLabel");
 
   return json({
@@ -114,7 +113,7 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
           customerName: registration.customerName,
           productName: registration.product.name,
           serialNumber: registration.serialNumber || "N/A",
-          warrantyExpiry: registration.warrantyExpiresAt?.toLocaleDateString() || "N/A",
+          warrantyExpiry: registration.warrantyExpiresAt?.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) || "N/A",
           portalUrl: `${process.env.APP_URL}/portal/${registration.id}`,
         },
       });
@@ -125,7 +124,7 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
     return redirect(`/portal/${registration.id}?registered=true`);
   } catch (error: any) {
     console.error("Registration error:", error);
-    const safeMessages = ["Product not found or warranty not active", "Invalid serial number", "Serial number already registered"];
+    const safeMessages = ["Product not found or warranty not active", "Invalid serial number", "Serial number already registered", "Serial number is required"];
     const message = safeMessages.includes(error.message) ? error.message : "Something went wrong. Please try again.";
     return json({ errors: { _form: message } }, { status: 400 });
   }

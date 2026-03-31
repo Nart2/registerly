@@ -5,6 +5,7 @@ import { z } from "zod";
 import { getRegistrationById } from "~/services/registration.server";
 import { createClaim } from "~/services/claim.server";
 import { sendEmail } from "~/services/email.server";
+import { rateLimitMiddleware } from "~/services/ratelimit.server";
 import tailwindStyles from "~/styles/tailwind.css?url";
 
 export const links = () => [{ rel: "stylesheet", href: tailwindStyles }];
@@ -43,6 +44,14 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
 export const action = async ({ params, request }: ActionFunctionArgs) => {
   const registrationId = params.registrationId;
   if (!registrationId) throw new Response("Not found", { status: 404 });
+
+  const rl = rateLimitMiddleware(request, { maxRequests: 5, windowMs: 60_000 });
+  if (!rl.allowed) {
+    return json(
+      { errors: { _form: "Too many requests. Please wait a moment before trying again." } },
+      { status: 429, headers: rl.headers },
+    );
+  }
 
   const formData = await request.formData();
   const raw = Object.fromEntries(formData);

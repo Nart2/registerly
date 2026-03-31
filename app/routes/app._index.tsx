@@ -16,6 +16,7 @@ import {
 } from "@shopify/polaris";
 import { authenticate } from "~/shopify.server";
 import { getRegistrationStats } from "~/services/registration.server";
+import { createDefaultTemplates } from "~/services/email.server";
 import prisma from "~/db.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -30,7 +31,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       data: { domain: session.shop },
     });
     // Create default email templates for new shops
-    const { createDefaultTemplates } = await import("~/services/email.server");
     await createDefaultTemplates(shop.id);
   }
 

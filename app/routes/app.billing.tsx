@@ -19,11 +19,11 @@ import {
 } from "@shopify/polaris";
 import { authenticate } from "~/shopify.server";
 import prisma from "~/db.server";
-import { PLANS, checkRegistrationLimit } from "~/services/billing.server";
+import { PLANS, checkRegistrationLimit, confirmSubscription, createSubscription } from "~/services/billing.server";
 import type { PlanType } from "@prisma/client";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  const { session, admin } = await authenticate.admin(request);
   const shop = await prisma.shop.findUnique({ where: { domain: session.shop } });
   if (!shop) throw new Response("Shop not found", { status: 404 });
 
@@ -36,8 +36,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   if (chargeConfirmed === "true" && newPlan) {
     try {
-      const { confirmSubscription } = await import("~/services/billing.server");
-      const { admin } = await authenticate.admin(request);
       await confirmSubscription(admin, session.shop, newPlan);
     } catch (e) {
       console.error("Failed to confirm subscription:", e);
@@ -78,7 +76,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     }
 
     try {
-      const { createSubscription } = await import("~/services/billing.server");
       const appUrl = process.env.APP_URL || "https://registerly.onrender.com";
       const returnUrl = `${appUrl}/app/billing?charge_confirmed=true&plan=${newPlan}`;
 

@@ -20,6 +20,7 @@ import { useState, useCallback, useEffect } from "react";
 import { authenticate } from "~/shopify.server";
 import { getProducts, updateProductWarranty, syncProduct } from "~/services/product.server";
 import { generateQRCode, getRegistrationUrl } from "~/services/qrcode.server";
+import { hasFeature } from "~/services/billing.server";
 import prisma from "~/db.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -63,7 +64,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     let requireSerialNumber = formData.get("requireSerialNumber") === "true";
 
     // Gate serial numbers to GROWTH+ plans
-    const { hasFeature } = await import("~/services/billing.server");
     if (requireSerialNumber && !hasFeature(shop.plan, "serialNumbers")) {
       requireSerialNumber = false; // Silently ignore for lower plans
     }
@@ -95,34 +95,6 @@ export default function ProductsPage() {
   const [qrModalOpen, setQrModalOpen] = useState(false);
 
   const isSyncing = syncFetcher.state !== "idle";
-
-  const handleWarrantyToggle = useCallback(
-    (product: any, e: React.MouseEvent) => {
-      e.stopPropagation();
-      warrantyFetcher.submit(
-        {
-          intent: "updateWarranty",
-          productId: product.id,
-          warrantyMonths: String(product.warrantyMonths),
-          isActive: String(!product.isActive),
-          requireSerialNumber: String(product.requireSerialNumber),
-        },
-        { method: "post" },
-      );
-    },
-    [warrantyFetcher],
-  );
-
-  const handleGenerateQR = useCallback(
-    (productId: string, e: React.MouseEvent) => {
-      e.stopPropagation();
-      qrFetcher.submit(
-        { intent: "generateQR", shopDomain, productId },
-        { method: "post" },
-      );
-    },
-    [qrFetcher, shopDomain],
-  );
 
   const handleSync = useCallback(() => {
     syncFetcher.submit({ intent: "sync" }, { method: "post" });
@@ -167,7 +139,7 @@ export default function ProductsPage() {
                             {product.isActive ? "Warranty Active" : "No Warranty"}
                           </Badge>
                           {product.isActive && (
-                            <Badge tone="info">{product.warrantyMonths} months</Badge>
+                            <Badge tone="info">{`${product.warrantyMonths} months`}</Badge>
                           )}
                           <Text as="span" tone="subdued" variant="bodySm">
                             {product._count.registrations} {product._count.registrations === 1 ? "registration" : "registrations"}
@@ -175,11 +147,23 @@ export default function ProductsPage() {
                         </InlineStack>
                       </BlockStack>
                       <InlineStack gap="200">
-                        <Button size="slim" onClick={(e: any) => handleWarrantyToggle(product, e)}>
+                        <Button size="slim" onClick={() => warrantyFetcher.submit(
+                          {
+                            intent: "updateWarranty",
+                            productId: product.id,
+                            warrantyMonths: String(product.warrantyMonths),
+                            isActive: String(!product.isActive),
+                            requireSerialNumber: String(product.requireSerialNumber),
+                          },
+                          { method: "post" },
+                        )}>
                           {product.isActive ? "Disable" : "Enable"} Warranty
                         </Button>
                         {product.isActive && (
-                          <Button size="slim" variant="plain" onClick={(e: any) => handleGenerateQR(product.id, e)}>
+                          <Button size="slim" variant="plain" onClick={() => qrFetcher.submit(
+                            { intent: "generateQR", shopDomain, productId: product.id },
+                            { method: "post" },
+                          )}>
                             QR Code
                           </Button>
                         )}

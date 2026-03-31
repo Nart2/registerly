@@ -168,7 +168,7 @@ export async function uploadFile(
   const response = await fetch(endpoint, {
     method: "PUT",
     headers: signedHeaders,
-    body: buffer,
+    body: new Uint8Array(buffer),
   });
 
   if (!response.ok) {
@@ -187,6 +187,11 @@ export async function uploadFile(
  * @param key - The object key (filename) to delete
  */
 export async function deleteFile(key: string): Promise<void> {
+  // Validate key format to prevent path traversal
+  if (!/^[\w.-]+$/.test(key)) {
+    throw new Error("Invalid file key format");
+  }
+
   const config = getR2Config();
   if (!config) {
     console.warn(

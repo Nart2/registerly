@@ -21,6 +21,7 @@ import {
 import { useState, useCallback } from "react";
 import { authenticate } from "~/shopify.server";
 import { getClaims, updateClaimStatus } from "~/services/claim.server";
+import { sendEmail } from "~/services/email.server";
 import prisma from "~/db.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -61,7 +62,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   // Send status update email
   try {
-    const { sendEmail } = await import("~/services/email.server");
     await sendEmail({
       to: claim.registration.customerEmail,
       shopId: claim.registration.shopId,

@@ -137,7 +137,7 @@ export async function createSubscription(
       variables: {
         name: `Registerly ${planConfig.name}`,
         returnUrl,
-        test: true, // Set to false for production charges
+        test: process.env.NODE_ENV !== "production", // Auto: test in dev, real charges in production
         lineItems: [
           {
             plan: {

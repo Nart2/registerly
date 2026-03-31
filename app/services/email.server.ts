@@ -28,9 +28,10 @@ export async function sendEmail({ to, shopId, templateType, variables }: SendEma
 
   // Replace variables like {{customerName}}, {{productName}}, etc.
   // HTML-escape values to prevent XSS in emails
+  // Strip control characters from subject to prevent header injection
   for (const [key, value] of Object.entries(variables)) {
     const placeholder = `{{${key}}}`;
-    subject = subject.replaceAll(placeholder, value);
+    subject = subject.replaceAll(placeholder, value.replace(/[\r\n\t]/g, " "));
     body = body.replaceAll(placeholder, escapeHtml(value));
   }
 

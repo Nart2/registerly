@@ -23,6 +23,7 @@ import {
   importSerialNumbers,
   getSerialNumbers,
 } from "~/services/product.server";
+import { hasFeature } from "~/services/billing.server";
 
 interface SerialNumber {
   id: string;
@@ -45,7 +46,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   if (!shop) throw new Response("Shop not found", { status: 404 });
 
   // Feature gate: serial numbers require Growth plan
-  const { hasFeature } = await import("~/services/billing.server");
   const canUseSerials = hasFeature(shop.plan, "serialNumbers");
 
   const products = await getProducts(shop.id);
@@ -93,7 +93,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   if (!shop) throw new Response("Shop not found", { status: 404 });
 
   // Feature gate
-  const { hasFeature } = await import("~/services/billing.server");
   if (!hasFeature(shop.plan, "serialNumbers")) {
     return json<ActionData>({ error: "Serial number management requires the Growth plan or higher." });
   }
@@ -164,37 +163,11 @@ export default function SerialImportPage() {
     shopId,
   } = data as any;
   const actionData = useActionData<ActionData>();
-
-  if (!canUseSerials) {
-    return (
-      <Page
-        title="Serial Number Import"
-        backAction={{ content: "Products", url: "/app/products" }}
-      >
-        <Layout>
-          <Layout.Section>
-            <Card>
-              <BlockStack gap="300" align="center">
-                <Text as="h2" variant="headingMd">Serial Number Management</Text>
-                <Text as="p" variant="bodyMd" tone="subdued">
-                  Serial number import and validation is available on the Growth plan and above.
-                  Upgrade to validate serial numbers during product registration.
-                </Text>
-                <InlineStack align="end">
-                  <Button url="/app/billing" variant="primary">View Plans</Button>
-                </InlineStack>
-              </BlockStack>
-            </Card>
-          </Layout.Section>
-        </Layout>
-      </Page>
-    );
-  }
   const submit = useSubmit();
   const navigation = useNavigation();
-
   const isSubmitting = navigation.state === "submitting";
 
+  // All hooks must be called before any conditional returns (Rules of Hooks)
   const [selectedProductId, setSelectedProductId] = useState(initialProductId || "");
   const [csvText, setCsvText] = useState("");
 
@@ -234,6 +207,32 @@ export default function SerialImportPage() {
     },
     [submit],
   );
+
+  if (!canUseSerials) {
+    return (
+      <Page
+        title="Serial Number Import"
+        backAction={{ content: "Products", url: "/app/products" }}
+      >
+        <Layout>
+          <Layout.Section>
+            <Card>
+              <BlockStack gap="300" align="center">
+                <Text as="h2" variant="headingMd">Serial Number Management</Text>
+                <Text as="p" variant="bodyMd" tone="subdued">
+                  Serial number import and validation is available on the Growth plan and above.
+                  Upgrade to validate serial numbers during product registration.
+                </Text>
+                <InlineStack align="end">
+                  <Button url="/app/billing" variant="primary">View Plans</Button>
+                </InlineStack>
+              </BlockStack>
+            </Card>
+          </Layout.Section>
+        </Layout>
+      </Page>
+    );
+  }
 
   const resourceName = { singular: "serial number", plural: "serial numbers" };
 
@@ -345,7 +344,7 @@ export default function SerialImportPage() {
                   <Text as="h2" variant="headingMd">
                     Existing Serial Numbers
                   </Text>
-                  <Badge>{String(totalSerials)} total</Badge>
+                  <Badge>{`${totalSerials} total`}</Badge>
                 </InlineStack>
                 {serials.length > 0 ? (
                   <IndexTable

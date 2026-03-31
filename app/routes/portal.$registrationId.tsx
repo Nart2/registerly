@@ -2,6 +2,7 @@ import { json } from "@remix-run/node";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, Link, useSearchParams } from "@remix-run/react";
 import { getRegistrationById } from "~/services/registration.server";
+import { hasFeature } from "~/services/billing.server";
 import tailwindStyles from "~/styles/tailwind.css?url";
 
 export const links = () => [{ rel: "stylesheet", href: tailwindStyles }];
@@ -13,7 +14,6 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   const registration = await getRegistrationById(registrationId);
   if (!registration) throw new Response("Registration not found", { status: 404 });
 
-  const { hasFeature } = await import("~/services/billing.server");
   const whiteLabel = registration.shop ? hasFeature(registration.shop.plan, "whiteLabel") : false;
 
   return json({ registration, whiteLabel });
@@ -105,7 +105,7 @@ export default function PortalPage() {
 
       {/* Main Card — overlaps the colored header */}
       <div className="max-w-2xl mx-auto px-4 -mt-8 pb-10">
-        <div className="card mb-6" style={{ borderTop: '3px solid #4F46E5' }}>
+        <div className="card mb-6" style={{ borderTop: `3px solid ${brandColor}` }}>
           {/* Product heading + status */}
           <div className="flex items-start justify-between gap-4">
             <div>
