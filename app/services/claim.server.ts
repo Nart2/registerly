@@ -72,9 +72,16 @@ export async function getClaims(
 
 export async function updateClaimStatus(
   id: string,
+  shopId: string,
   status: ClaimStatus,
   merchantNotes?: string,
 ) {
+  const claim = await prisma.claim.findFirst({
+    where: { id, registration: { shopId } },
+  });
+  if (!claim) {
+    throw new Error("Claim not found");
+  }
   return prisma.claim.update({
     where: { id },
     data: { status, merchantNotes },

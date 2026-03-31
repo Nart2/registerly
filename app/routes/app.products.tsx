@@ -59,7 +59,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const isActive = formData.get("isActive") === "true";
     const requireSerialNumber = formData.get("requireSerialNumber") === "true";
 
-    await updateProductWarranty(productId, { warrantyMonths, isActive, requireSerialNumber });
+    const shop = await prisma.shop.findUnique({ where: { domain: session.shop } });
+    if (!shop) throw new Response("Shop not found", { status: 404 });
+
+    await updateProductWarranty(productId, shop.id, { warrantyMonths, isActive, requireSerialNumber });
     return json({ success: true });
   }
 

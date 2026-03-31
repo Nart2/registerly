@@ -22,6 +22,10 @@ export default function handleRequest(
           const body = new PassThrough();
           const stream = createReadableStreamFromReadable(body);
           responseHeaders.set("Content-Type", "text/html");
+          responseHeaders.set("X-Content-Type-Options", "nosniff");
+          responseHeaders.set("Referrer-Policy", "strict-origin-when-cross-origin");
+          responseHeaders.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+          responseHeaders.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
           resolve(
             new Response(stream, {
               headers: responseHeaders,

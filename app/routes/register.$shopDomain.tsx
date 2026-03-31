@@ -120,7 +120,10 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
 
     return redirect(`/portal/${registration.id}?registered=true`);
   } catch (error: any) {
-    return json({ errors: { _form: error.message } }, { status: 400 });
+    console.error("Registration error:", error);
+    const safeMessages = ["Product not found or warranty not active", "Invalid serial number", "Serial number already registered"];
+    const message = safeMessages.includes(error.message) ? error.message : "Something went wrong. Please try again.";
+    return json({ errors: { _form: message } }, { status: 400 });
   }
 };
 

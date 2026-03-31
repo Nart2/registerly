@@ -27,10 +27,11 @@ export async function sendEmail({ to, shopId, templateType, variables }: SendEma
   let body = template.body;
 
   // Replace variables like {{customerName}}, {{productName}}, etc.
+  // HTML-escape values to prevent XSS in emails
   for (const [key, value] of Object.entries(variables)) {
     const placeholder = `{{${key}}}`;
     subject = subject.replaceAll(placeholder, value);
-    body = body.replaceAll(placeholder, value);
+    body = body.replaceAll(placeholder, escapeHtml(value));
   }
 
   if (!resend) {
@@ -117,6 +118,15 @@ export async function createDefaultTemplates(shopId: string) {
       update: {},
     });
   }
+}
+
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 function wrapEmailHtml(body: string): string {

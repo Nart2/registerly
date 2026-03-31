@@ -60,7 +60,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   let serials: SerialNumber[] = [];
   let totalSerials = 0;
   if (selectedProductId) {
-    const result = await getSerialNumbers(selectedProductId, 1, 50);
+    const result = await getSerialNumbers(selectedProductId, shop.id, 1, 50);
     serials = result.serials.map((s) => ({
       id: s.id,
       serialNumber: s.serialNumber,
@@ -127,6 +127,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const serialId = formData.get("serialId") as string;
     if (!serialId) {
       return json<ActionData>({ error: "Serial number ID is required." });
+    }
+
+    // Verify serial belongs to this shop
+    const serial = await prisma.serialNumber.findFirst({
+      where: { id: serialId, shopId: shop.id },
+    });
+    if (!serial) {
+      return json<ActionData>({ error: "Serial number not found." });
     }
 
     await prisma.serialNumber.delete({ where: { id: serialId } });

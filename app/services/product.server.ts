@@ -22,8 +22,13 @@ export async function syncProduct(
 
 export async function updateProductWarranty(
   id: string,
+  shopId: string,
   data: { warrantyMonths?: number; isActive?: boolean; requireSerialNumber?: boolean },
 ) {
+  const product = await prisma.product.findFirst({ where: { id, shopId } });
+  if (!product) {
+    throw new Error("Product not found");
+  }
   return prisma.product.update({ where: { id }, data });
 }
 
@@ -44,7 +49,12 @@ export async function importSerialNumbers(
   });
 }
 
-export async function getSerialNumbers(productId: string, page = 1, limit = 50) {
+export async function getSerialNumbers(productId: string, shopId: string, page = 1, limit = 50) {
+  // Verify product belongs to shop
+  const product = await prisma.product.findFirst({ where: { id: productId, shopId } });
+  if (!product) {
+    throw new Error("Product not found");
+  }
   const skip = (page - 1) * limit;
   const [serials, total] = await Promise.all([
     prisma.serialNumber.findMany({

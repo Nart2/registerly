@@ -125,7 +125,13 @@ export async function getRegistrationById(id: string) {
   });
 }
 
-export async function updateRegistrationStatus(id: string, status: RegistrationStatus) {
+export async function updateRegistrationStatus(id: string, shopId: string, status: RegistrationStatus) {
+  const registration = await prisma.registration.findFirst({
+    where: { id, shopId },
+  });
+  if (!registration) {
+    throw new Error("Registration not found");
+  }
   return prisma.registration.update({
     where: { id },
     data: { status },

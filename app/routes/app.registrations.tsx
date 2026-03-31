@@ -45,9 +45,19 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const formData = await request.formData();
   const registrationId = formData.get("registrationId") as string;
-  const status = formData.get("status") as "APPROVED" | "REJECTED";
+  const rawStatus = formData.get("status") as string;
 
-  const registration = await updateRegistrationStatus(registrationId, status);
+  // Validate status
+  const validStatuses = ["APPROVED", "REJECTED"] as const;
+  if (!validStatuses.includes(rawStatus as any)) {
+    return json({ error: "Invalid status" }, { status: 400 });
+  }
+  const status = rawStatus as "APPROVED" | "REJECTED";
+
+  const shop = await prisma.shop.findUnique({ where: { domain: session.shop } });
+  if (!shop) throw new Response("Shop not found", { status: 404 });
+
+  const registration = await updateRegistrationStatus(registrationId, shop.id, status);
 
   // Send confirmation email if approved
   if (status === "APPROVED") {

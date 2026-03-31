@@ -39,10 +39,19 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const formData = await request.formData();
   const claimId = formData.get("claimId") as string;
-  const status = formData.get("status") as any;
+  const rawStatus = formData.get("status") as string;
   const merchantNotes = formData.get("merchantNotes") as string;
 
-  const claim = await updateClaimStatus(claimId, status, merchantNotes);
+  // Validate status
+  const validStatuses = ["OPEN", "IN_REVIEW", "APPROVED", "REJECTED", "RESOLVED"];
+  if (!validStatuses.includes(rawStatus)) {
+    return json({ error: "Invalid status" }, { status: 400 });
+  }
+
+  const shop = await prisma.shop.findUnique({ where: { domain: session.shop } });
+  if (!shop) throw new Response("Shop not found", { status: 404 });
+
+  const claim = await updateClaimStatus(claimId, shop.id, rawStatus as any, merchantNotes);
 
   // Send status update email
   try {

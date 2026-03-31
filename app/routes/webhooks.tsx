@@ -58,6 +58,12 @@ async function handleOrderPaid(shopDomain: string, payload: any) {
 
     if (!product) continue;
 
+    // Idempotency: skip if already registered for this order + product
+    const existing = await prisma.registration.findFirst({
+      where: { shopId: shop.id, shopifyOrderId: String(order.id), productId: product.id },
+    });
+    if (existing) continue;
+
     // Check limit
     const limitCheck = await checkRegistrationLimit(shop.id);
     if (!limitCheck.allowed) continue;

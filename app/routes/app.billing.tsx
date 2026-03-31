@@ -48,19 +48,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   if (!shop) throw new Response("Shop not found", { status: 404 });
 
   if (intent === "upgrade") {
-    const newPlan = formData.get("plan") as PlanType;
-
-    const validPlans: PlanType[] = ["FREE", "STARTER", "GROWTH", "PRO"];
-    if (!validPlans.includes(newPlan)) {
-      return json({ error: "Invalid plan selected" }, { status: 400 });
-    }
-
-    await prisma.shop.update({
-      where: { id: shop.id },
-      data: { plan: newPlan },
-    });
-
-    return json({ success: true, plan: newPlan });
+    // Plan changes are disabled until Shopify billing API integration is complete.
+    // Direct DB updates would allow free plan bypassing.
+    return json({ error: "Plan changes are not yet available. Shopify billing integration coming soon." }, { status: 400 });
   }
 
   return json({ error: "Unknown intent" }, { status: 400 });
