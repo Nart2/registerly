@@ -44,6 +44,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const shop = await prisma.shop.findUnique({ where: { domain: session.shop } });
   if (!shop) throw new Response("Shop not found", { status: 404 });
 
+  // Feature gate: serial numbers require Growth plan
+  const { hasFeature } = await import("~/services/billing.server");
+  const canUseSerials = hasFeature(shop.plan, "serialNumbers");
+
   const products = await getProducts(shop.id);
 
   const serialCounts: Record<string, number> = {};
@@ -70,6 +74,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   }
 
   return json({
+    canUseSerials,
     products,
     serialCounts,
     selectedProductId,
@@ -86,6 +91,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   const shop = await prisma.shop.findUnique({ where: { domain: session.shop } });
   if (!shop) throw new Response("Shop not found", { status: 404 });
+
+  // Feature gate
+  const { hasFeature } = await import("~/services/billing.server");
+  if (!hasFeature(shop.plan, "serialNumbers")) {
+    return json<ActionData>({ error: "Serial number management requires the Growth plan or higher." });
+  }
 
   if (intent === "import") {
     const productId = formData.get("productId") as string;
@@ -142,15 +153,43 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function SerialImportPage() {
+  const data = useLoaderData<typeof loader>();
   const {
+    canUseSerials,
     products,
     serialCounts,
     selectedProductId: initialProductId,
     serials,
     totalSerials,
     shopId,
-  } = useLoaderData<typeof loader>();
+  } = data as any;
   const actionData = useActionData<ActionData>();
+
+  if (!canUseSerials) {
+    return (
+      <Page
+        title="Serial Number Import"
+        backAction={{ content: "Products", url: "/app/products" }}
+      >
+        <Layout>
+          <Layout.Section>
+            <Card>
+              <BlockStack gap="300" align="center">
+                <Text as="h2" variant="headingMd">Serial Number Management</Text>
+                <Text as="p" variant="bodyMd" tone="subdued">
+                  Serial number import and validation is available on the Growth plan and above.
+                  Upgrade to validate serial numbers during product registration.
+                </Text>
+                <InlineStack align="end">
+                  <Button url="/app/billing" variant="primary">View Plans</Button>
+                </InlineStack>
+              </BlockStack>
+            </Card>
+          </Layout.Section>
+        </Layout>
+      </Page>
+    );
+  }
   const submit = useSubmit();
   const navigation = useNavigation();
 

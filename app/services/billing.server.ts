@@ -45,6 +45,31 @@ export function getPlanConfig(plan: PlanType): PlanConfig {
   return PLANS.find((p) => p.type === plan) || PLANS[0];
 }
 
+// Feature gating — which features are available per plan
+export type Feature = "customTemplates" | "serialNumbers" | "analytics" | "whiteLabel" | "brandColor";
+
+const PLAN_FEATURES: Record<PlanType, Feature[]> = {
+  FREE: [],
+  STARTER: ["customTemplates", "brandColor"],
+  GROWTH: ["customTemplates", "brandColor", "serialNumbers", "analytics"],
+  PRO: ["customTemplates", "brandColor", "serialNumbers", "analytics", "whiteLabel"],
+};
+
+export function hasFeature(plan: PlanType, feature: Feature): boolean {
+  return PLAN_FEATURES[plan]?.includes(feature) ?? false;
+}
+
+export function getRequiredPlan(feature: Feature): string {
+  const planOrder: PlanType[] = ["FREE", "STARTER", "GROWTH", "PRO"];
+  for (const plan of planOrder) {
+    if (PLAN_FEATURES[plan].includes(feature)) {
+      const config = getPlanConfig(plan);
+      return config.name;
+    }
+  }
+  return "Pro";
+}
+
 export async function checkRegistrationLimit(shopId: string): Promise<{ allowed: boolean; current: number; limit: number }> {
   const shop = await prisma.shop.findUnique({ where: { id: shopId } });
   if (!shop) throw new Error("Shop not found");

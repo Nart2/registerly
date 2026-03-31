@@ -39,6 +39,9 @@ export const loader = async ({ params, request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const preselectedProduct = url.searchParams.get("product");
 
+  const { hasFeature } = await import("~/services/billing.server");
+  const whiteLabel = hasFeature(shop.plan, "whiteLabel");
+
   return json({
     shop: { domain: shop.domain, brandColor: shop.brandColor, brandLogo: shop.brandLogo },
     products: shop.products.map((p) => ({
@@ -48,6 +51,7 @@ export const loader = async ({ params, request }: LoaderFunctionArgs) => {
       requireSerialNumber: p.requireSerialNumber,
     })),
     preselectedProduct,
+    whiteLabel,
   });
 };
 
@@ -128,7 +132,7 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
 };
 
 export default function RegisterPage() {
-  const { shop, products, preselectedProduct } = useLoaderData<typeof loader>();
+  const { shop, products, preselectedProduct, whiteLabel } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
@@ -347,13 +351,15 @@ export default function RegisterPage() {
           </Form>
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-center gap-1.5 mt-8 py-4">
-          <svg className="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-          </svg>
-          <p className="text-xs text-gray-400 tracking-wide">Secured by <span className="text-brand-600 font-medium">Registerly</span></p>
-        </div>
+        {/* Footer — hidden for Pro plan (white-label) */}
+        {!whiteLabel && (
+          <div className="flex items-center justify-center gap-1.5 mt-8 py-4">
+            <svg className="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            <p className="text-xs text-gray-400 tracking-wide">Secured by <span className="text-brand-600 font-medium">Registerly</span></p>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -40,6 +40,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   if (!shop) throw new Response("Shop not found", { status: 404 });
 
   if (intent === "updateTemplate") {
+    const { hasFeature } = await import("~/services/billing.server");
+    if (!hasFeature(shop.plan, "customTemplates")) {
+      return json({ error: "Custom email templates require the Starter plan or higher. Upgrade to customize templates." }, { status: 403 });
+    }
     const type = formData.get("type") as any;
     const subject = formData.get("subject") as string;
     const body = formData.get("body") as string;
@@ -48,6 +52,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   }
 
   if (intent === "updateBranding") {
+    const { hasFeature } = await import("~/services/billing.server");
+    if (!hasFeature(shop.plan, "brandColor")) {
+      return json({ error: "Custom brand colors require the Starter plan or higher." }, { status: 403 });
+    }
     const brandColor = formData.get("brandColor") as string;
     await prisma.shop.update({
       where: { id: shop.id },

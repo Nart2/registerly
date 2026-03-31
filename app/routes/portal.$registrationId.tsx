@@ -13,7 +13,10 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   const registration = await getRegistrationById(registrationId);
   if (!registration) throw new Response("Registration not found", { status: 404 });
 
-  return json({ registration });
+  const { hasFeature } = await import("~/services/billing.server");
+  const whiteLabel = registration.shop ? hasFeature(registration.shop.plan, "whiteLabel") : false;
+
+  return json({ registration, whiteLabel });
 };
 
 function statusBadgeClass(status: string) {
@@ -62,7 +65,7 @@ function formatDateFull(dateStr: string): string {
 }
 
 export default function PortalPage() {
-  const { registration } = useLoaderData<typeof loader>();
+  const { registration, whiteLabel } = useLoaderData<typeof loader>();
   const [searchParams] = useSearchParams();
   const justRegistered = searchParams.get("registered") === "true";
 
@@ -218,13 +221,15 @@ export default function PortalPage() {
           </div>
         )}
 
-        {/* Footer */}
-        <div className="flex items-center justify-center gap-1.5 mt-10 py-4">
-          <svg className="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-          </svg>
-          <p className="text-xs text-gray-400 tracking-wide">Secured by <span className="text-brand-600 font-medium">Registerly</span></p>
-        </div>
+        {/* Footer — hidden for Pro plan (white-label) */}
+        {!whiteLabel && (
+          <div className="flex items-center justify-center gap-1.5 mt-10 py-4">
+            <svg className="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            <p className="text-xs text-gray-400 tracking-wide">Secured by <span className="text-brand-600 font-medium">Registerly</span></p>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -13,6 +13,7 @@ import {
   InlineStack,
   Divider,
   Box,
+  Button,
 } from "@shopify/polaris";
 import { authenticate } from "~/shopify.server";
 import prisma from "~/db.server";
@@ -26,6 +27,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   if (!shop) {
     return json({
+      plan: "FREE",
+      gated: true,
       totalRegistrations: 0,
       approvedCount: 0,
       pendingCount: 0,
@@ -38,6 +41,19 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       growthPercentage: 0,
       thisMonthCount: 0,
       lastMonthCount: 0,
+    });
+  }
+
+  const { hasFeature } = await import("~/services/billing.server");
+  if (!hasFeature(shop.plan, "analytics")) {
+    return json({
+      gated: true,
+      plan: shop.plan,
+      totalRegistrations: 0, approvedCount: 0, pendingCount: 0, rejectedCount: 0,
+      registrationsByMonth: [], topProducts: [],
+      claimsByStatus: { OPEN: 0, IN_REVIEW: 0, APPROVED: 0, REJECTED: 0, RESOLVED: 0 },
+      avgWarrantyMonths: 0, channelBreakdown: { SHOPIFY: 0, AMAZON: 0, RETAIL: 0, OTHER: 0 },
+      growthPercentage: 0, thisMonthCount: 0, lastMonthCount: 0,
     });
   }
 
@@ -195,6 +211,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         : 0;
 
   return json({
+    gated: false,
+    plan: shop.plan,
     totalRegistrations,
     approvedCount,
     pendingCount,
@@ -211,6 +229,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export default function AnalyticsPage() {
+  const data = useLoaderData<typeof loader>();
   const {
     totalRegistrations,
     approvedCount,
@@ -224,7 +243,30 @@ export default function AnalyticsPage() {
     growthPercentage,
     thisMonthCount,
     lastMonthCount,
-  } = useLoaderData<typeof loader>();
+  } = data as any;
+
+  if ((data as any).gated) {
+    return (
+      <Page title="Analytics">
+        <Layout>
+          <Layout.Section>
+            <Card>
+              <BlockStack gap="300" inlineAlign="center">
+                <Text as="h2" variant="headingMd">Analytics Dashboard</Text>
+                <Text as="p" variant="bodyMd" tone="subdued">
+                  The Analytics Dashboard is available on the Growth plan and above.
+                  Upgrade to see registration trends, channel breakdown, top products, and more.
+                </Text>
+                <Box paddingBlockStart="200">
+                  <Button url="/app/billing" variant="primary">View Plans</Button>
+                </Box>
+              </BlockStack>
+            </Card>
+          </Layout.Section>
+        </Layout>
+      </Page>
+    );
+  }
 
   const approvedRate =
     totalRegistrations > 0
