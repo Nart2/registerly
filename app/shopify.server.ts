@@ -17,7 +17,7 @@ const shopify = shopifyApp({
   appUrl: process.env.APP_URL || "",
   authPathPrefix: "/auth",
   sessionStorage: new PrismaSessionStorage(prisma),
-  distribution: AppDistribution.ShopifyAdmin,
+  distribution: AppDistribution.AppStore,
   restResources,
   webhooks: {
     ORDERS_PAID: {
