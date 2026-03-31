@@ -79,21 +79,23 @@ export default function PortalPage() {
       {/* Colored Hero Header */}
       <div className="hero-section">
         <div className="max-w-2xl mx-auto px-4 pt-10 pb-16 sm:pt-14 sm:pb-20">
-          {justRegistered && (
-            <div className="mb-6 p-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl flex items-start gap-3">
-              <div className="shrink-0 w-8 h-8 rounded-full bg-green-400/20 flex items-center justify-center">
-                <svg className="w-4 h-4 text-green-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          {justRegistered ? (
+            <div className="mb-6 text-center">
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-green-400/20 mb-4">
+                <svg className="w-7 h-7 text-green-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <div>
-                <p className="font-semibold text-white">Product registered successfully!</p>
-                <p className="text-sm text-brand-200 mt-0.5">You will receive a confirmation email shortly.</p>
-              </div>
+              <h1 className="text-3xl font-bold text-white">You're all set!</h1>
+              <p className="text-brand-200 mt-2 text-sm">Your product is registered and protected. We'll review it shortly.</p>
+              <p className="text-brand-300 mt-1 text-xs">ID: {reg.id.slice(0, 8)}</p>
             </div>
+          ) : (
+            <>
+              <h1 className="text-2xl font-bold text-white">Your Product Registration</h1>
+              <p className="text-brand-200 mt-1 text-sm">ID: {reg.id.slice(0, 8)}</p>
+            </>
           )}
-          <h1 className="text-2xl font-bold text-white">Your Product Registration</h1>
-          <p className="text-brand-200 mt-1 text-sm">ID: {reg.id.slice(0, 8)}</p>
         </div>
       </div>
 
@@ -105,7 +107,12 @@ export default function PortalPage() {
             <div>
               <h2 className="text-xl font-bold text-gray-900">{reg.product.name}</h2>
             </div>
-            <span className={statusBadgeClass(reg.status)}>{reg.status}</span>
+            <div className="text-right">
+              <span className={statusBadgeClass(reg.status)}>{reg.status}</span>
+              {reg.status === "PENDING" && (
+                <p className="text-sm text-gray-500 mt-1.5">We're reviewing your registration — usually within 24 hours</p>
+              )}
+            </div>
           </div>
 
           {/* Info Grid */}
@@ -148,19 +155,38 @@ export default function PortalPage() {
           <div className="mt-8 p-5 rounded-xl bg-gray-50 border border-gray-100">
             <div className="flex items-center justify-between mb-3">
               <p className="text-sm font-semibold text-gray-700">Warranty Status</p>
-              <p className={`text-sm font-medium ${isWarrantyActive ? "text-green-600" : reg.status === "PENDING" ? "text-amber-600" : "text-red-600"}`}>
+              <p className={`text-sm font-medium ${isWarrantyActive ? "text-green-600" : reg.status === "PENDING" ? "text-brand-600" : "text-red-600"}`}>
                 {isWarrantyActive ? monthsRemaining : reg.status === "PENDING" ? "Pending Approval" : "Expired"}
               </p>
             </div>
             <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
               <div
-                className={`h-full rounded-full transition-all duration-500 ${isWarrantyActive ? "bg-green-500" : "bg-red-400"}`}
-                style={{ width: `${warrantyProgress}%` }}
+                className={`h-full rounded-full transition-all duration-500 ${isWarrantyActive ? "bg-green-500" : reg.status === "PENDING" ? "bg-brand-500" : "bg-red-400"}`}
+                style={{ width: `${reg.status === "PENDING" ? 10 : warrantyProgress}%` }}
               />
             </div>
             <div className="flex justify-between mt-2 text-xs text-gray-400">
               <span>{new Date(reg.purchaseDate).toLocaleDateString()}</span>
               <span>{reg.warrantyExpiresAt ? new Date(reg.warrantyExpiresAt).toLocaleDateString() : "N/A"}</span>
+            </div>
+          </div>
+
+          {/* Next Steps */}
+          <div className="mt-6 pt-6 border-t border-gray-100">
+            <p className="text-sm font-medium text-gray-700 mb-3">What's next?</p>
+            <div className="space-y-2">
+              <p className="text-sm text-gray-500 flex items-center gap-2">
+                <svg className="w-4 h-4 text-brand-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                Check your email for a confirmation
+              </p>
+              <p className="text-sm text-gray-500 flex items-center gap-2">
+                <svg className="w-4 h-4 text-brand-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
+                Bookmark this page to check your status
+              </p>
+              <p className="text-sm text-gray-500 flex items-center gap-2">
+                <svg className="w-4 h-4 text-brand-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                Submit a claim if you experience any issues
+              </p>
             </div>
           </div>
         </div>

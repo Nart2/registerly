@@ -1,6 +1,7 @@
 import { json, redirect } from "@remix-run/node";
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useActionData, Form, useNavigation } from "@remix-run/react";
+import React, { useState } from "react";
 import { z } from "zod";
 import prisma from "~/db.server";
 import { createRegistration } from "~/services/registration.server";
@@ -132,6 +133,9 @@ export default function RegisterPage() {
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
   const errors = (actionData as any)?.errors || {};
+  const [step, setStep] = useState(1);
+
+  const stepLabels = ["Choose your product", "Tell us about yourself", "Complete registration"];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -144,7 +148,14 @@ export default function RegisterPage() {
             </svg>
           </div>
           <h1 className="text-3xl font-bold text-white tracking-tight">Register Your Product</h1>
-          <p className="text-brand-200 mt-2 text-base">Activate your warranty in under a minute</p>
+          <p className="text-brand-200 mt-2 text-base">Get warranty protection in 60 seconds</p>
+          {step === 1 && (
+            <div className="flex flex-col items-center gap-1 mt-3">
+              <span className="text-brand-200 text-sm flex items-center gap-2">&#10003; Track your product anytime</span>
+              <span className="text-brand-200 text-sm flex items-center gap-2">&#10003; Easy warranty claims</span>
+              <span className="text-brand-200 text-sm flex items-center gap-2">&#10003; Fast customer support</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -160,9 +171,28 @@ export default function RegisterPage() {
             </div>
           )}
 
+          {/* Step Indicator */}
+          <div className="flex items-center justify-center mb-4">
+            {[1, 2, 3].map((s) => (
+              <React.Fragment key={s}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${
+                  step > s ? 'bg-brand-600 text-white' : step === s ? 'bg-brand-600 text-white ring-4 ring-brand-100' : 'bg-gray-200 text-gray-500'
+                }`}>
+                  {step > s ? (
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                  ) : s}
+                </div>
+                {s < 3 && <div className={`w-12 h-0.5 ${step > s ? 'bg-brand-600' : 'bg-gray-200'}`} />}
+              </React.Fragment>
+            ))}
+          </div>
+
+          {/* Step Label */}
+          <p className="text-center text-sm font-medium text-gray-500 mb-8">{stepLabels[step - 1]}</p>
+
           <Form method="post" className="space-y-8">
-            {/* Section: Product Selection */}
-            <div>
+            {/* Step 1: Product Selection */}
+            <div className={step !== 1 ? "hidden" : undefined}>
               <p className="section-title">Product Selection</p>
               <div>
                 <label htmlFor="productId" className="block text-sm font-medium text-gray-700 mb-1.5">Product *</label>
@@ -182,10 +212,22 @@ export default function RegisterPage() {
                 </select>
                 {errors.productId && <p className="text-red-500 text-sm mt-1.5">{errors.productId}</p>}
               </div>
+
+              {/* Step 1 Navigation */}
+              <div className="flex justify-end mt-6">
+                <button
+                  type="button"
+                  onClick={() => setStep(2)}
+                  className="btn-primary px-6 text-sm"
+                  style={{ backgroundColor: shop.brandColor }}
+                >
+                  Next
+                </button>
+              </div>
             </div>
 
-            {/* Section: Your Information */}
-            <div>
+            {/* Step 2: Your Information */}
+            <div className={step !== 2 ? "hidden" : undefined}>
               <p className="section-title">Your Information</p>
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -205,10 +247,29 @@ export default function RegisterPage() {
                   <input type="tel" id="customerPhone" name="customerPhone" className="input-field" placeholder="+1 (555) 000-0000" />
                 </div>
               </div>
+
+              {/* Step 2 Navigation */}
+              <div className="flex justify-between mt-6">
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="px-6 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Back
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStep(3)}
+                  className="btn-primary px-6 text-sm"
+                  style={{ backgroundColor: shop.brandColor }}
+                >
+                  Next
+                </button>
+              </div>
             </div>
 
-            {/* Section: Purchase Details */}
-            <div>
+            {/* Step 3: Purchase & Confirm */}
+            <div className={step !== 3 ? "hidden" : undefined}>
               <p className="section-title">Purchase Details</p>
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -233,29 +294,38 @@ export default function RegisterPage() {
                   </select>
                 </div>
               </div>
-            </div>
 
-            {/* Section: Confirmation */}
-            <div>
-              <p className="section-title">Confirmation</p>
-              <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl">
-                <input type="checkbox" id="consent" name="consent" className="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500" required />
-                <label htmlFor="consent" className="text-sm text-gray-600 leading-relaxed">
-                  I agree to the storage and processing of my data for warranty purposes. I can request deletion at any time.
-                </label>
+              {/* Confirmation */}
+              <div className="mt-6">
+                <p className="section-title">Confirmation</p>
+                <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl">
+                  <input type="checkbox" id="consent" name="consent" className="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500" required />
+                  <label htmlFor="consent" className="text-sm text-gray-600 leading-relaxed">
+                    I agree to the storage and processing of my data for warranty purposes. I can request deletion at any time.
+                  </label>
+                </div>
+                {errors.consent && <p className="text-red-500 text-sm mt-1.5">{errors.consent}</p>}
               </div>
-              {errors.consent && <p className="text-red-500 text-sm mt-1.5">{errors.consent}</p>}
-            </div>
 
-            {/* Submit */}
-            <button
-              type="submit"
-              className="btn-primary w-full text-base"
-              disabled={isSubmitting}
-              style={{ backgroundColor: shop.brandColor }}
-            >
-              {isSubmitting ? "Registering..." : "Register Product"}
-            </button>
+              {/* Step 3 Navigation */}
+              <div className="flex justify-between mt-6">
+                <button
+                  type="button"
+                  onClick={() => setStep(2)}
+                  className="px-6 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Back
+                </button>
+                <button
+                  type="submit"
+                  className="btn-primary px-6 text-sm"
+                  disabled={isSubmitting}
+                  style={{ backgroundColor: shop.brandColor }}
+                >
+                  {isSubmitting ? "Activating..." : "Activate Warranty"}
+                </button>
+              </div>
+            </div>
           </Form>
         </div>
 

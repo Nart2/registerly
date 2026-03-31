@@ -82,16 +82,21 @@ export default function TestDashboard() {
           <h2 className="text-base font-semibold text-gray-900 mb-4">Products</h2>
           <div className="divide-y divide-gray-100">
             {products.map((product: any) => (
-              <div key={product.id} className="py-3 flex items-center justify-between">
+              <div key={product.id} className="group py-3 px-3 -mx-3 flex items-center justify-between rounded-lg hover:bg-gray-50 transition-colors cursor-default">
                 <div>
                   <p className="font-medium text-gray-900">{product.name}</p>
                   <p className="text-sm text-gray-500">
                     {product.warrantyMonths} months warranty — {product._count.registrations} registrations
                   </p>
                 </div>
-                <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${product.isActive ? "bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20" : "bg-gray-50 text-gray-600 ring-1 ring-inset ring-gray-500/10"}`}>
-                  {product.isActive ? "Active" : "Inactive"}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${product.isActive ? "bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20" : "bg-gray-50 text-gray-600 ring-1 ring-inset ring-gray-500/10"}`}>
+                    {product.isActive ? "Active" : "Inactive"}
+                  </span>
+                  <svg className="w-4 h-4 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
               </div>
             ))}
           </div>
@@ -127,18 +132,23 @@ export default function TestDashboard() {
                   {registrations.map((reg: any) => (
                     <tr key={reg.id} className="hover:bg-gray-50 transition-colors">
                       <td className="py-3">
-                        <p className="font-medium text-gray-900">{reg.customerName}</p>
-                        <p className="text-gray-500 text-xs">{reg.customerEmail}</p>
+                        <p className="font-semibold text-gray-900">{reg.customerName}</p>
+                        <p className="text-xs text-gray-400">{reg.customerEmail}</p>
                       </td>
                       <td className="py-3 text-gray-700">{reg.product.name}</td>
                       <td className="py-3 text-gray-600 font-mono text-xs">{reg.serialNumber || "—"}</td>
                       <td className="py-3 text-gray-600">{reg.purchaseChannel}</td>
                       <td className="py-3">
-                        <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
                           reg.status === "APPROVED" ? "bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20" :
                           reg.status === "PENDING" ? "bg-yellow-50 text-yellow-700 ring-1 ring-inset ring-yellow-600/20" :
                           "bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20"
                         }`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${
+                            reg.status === "APPROVED" ? "bg-green-500" :
+                            reg.status === "PENDING" ? "bg-yellow-500" :
+                            "bg-red-500"
+                          }`} />
                           {reg.status}
                         </span>
                       </td>
@@ -171,12 +181,20 @@ function StatCard({ title, value, color }: { title: string; value: number; color
     yellow: "text-yellow-700",
     red: "text-red-700",
   };
+  const emptyHints: Record<string, string> = {
+    "Active Warranties": "Approve registrations to activate",
+    "Open Claims": "No claims — that's great!",
+    "Expiring Soon": "All warranties are healthy",
+  };
   const bg = color ? styles[color as keyof typeof styles] : "bg-white border-gray-200";
   const vc = color ? valueColor[color as keyof typeof valueColor] : "text-gray-900";
   return (
     <div className={`${bg} rounded-xl border p-5`}>
       <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">{title}</p>
       <p className={`text-3xl font-bold ${vc} mt-1`}>{value}</p>
+      {value === 0 && emptyHints[title] && (
+        <p className="text-xs text-gray-400 mt-1">{emptyHints[title]}</p>
+      )}
     </div>
   );
 }
