@@ -5,6 +5,8 @@ services:
     buildCommand: npm install && npx prisma generate && npm run build
     startCommand: npx prisma migrate deploy && npx remix-serve ./build/server/index.js
     envVars:
+      - key: PORT
+        value: "3000"
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
