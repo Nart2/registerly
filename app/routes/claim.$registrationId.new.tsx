@@ -102,31 +102,32 @@ export default function NewClaimPage() {
   const errors = (actionData as any)?.errors || {};
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-      <div className="max-w-xl mx-auto px-4 py-10 sm:py-16">
-        {/* Header */}
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Submit Warranty Claim</h1>
+    <div className="min-h-screen bg-gray-50">
+      {/* Colored Hero Header */}
+      <div className="hero-section">
+        <div className="max-w-xl mx-auto px-4 pt-10 pb-16 sm:pt-14 sm:pb-20">
+          <h1 className="text-2xl font-bold text-white tracking-tight">Submit Warranty Claim</h1>
+          <div className="mt-3 flex items-center gap-4 text-sm text-brand-200">
+            <span className="flex items-center gap-1.5">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+              </svg>
+              {registration.productName}
+            </span>
+            <span className="text-brand-400">|</span>
+            <span className="flex items-center gap-1.5">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              {registration.customerName}
+            </span>
+          </div>
         </div>
+      </div>
 
-        {/* Context bar */}
-        <div className="mb-6 flex items-center justify-center gap-4 py-3 px-5 bg-gray-50 rounded-xl border border-gray-100 text-sm text-gray-500">
-          <span className="flex items-center gap-1.5">
-            <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-            </svg>
-            {registration.productName}
-          </span>
-          <span className="text-gray-300">|</span>
-          <span className="flex items-center gap-1.5">
-            <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-            {registration.customerName}
-          </span>
-        </div>
-
-        <div className="card">
+      {/* Form Card - pulled up */}
+      <div className="max-w-xl mx-auto px-4 -mt-8 sm:-mt-12 pb-10">
+        <div className="card shadow-lg">
           {errors._form && (
             <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl text-red-700 text-sm flex items-start gap-3">
               <svg className="w-5 h-5 text-red-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -198,7 +199,7 @@ export default function NewClaimPage() {
           <svg className="w-3.5 h-3.5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
           </svg>
-          <p className="text-xs text-gray-400">Secured by Registerly</p>
+          <p className="text-xs text-gray-400">Secured by <span className="text-brand-600 font-medium">Registerly</span></p>
         </div>
       </div>
     </div>

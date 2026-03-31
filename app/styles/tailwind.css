@@ -4,13 +4,13 @@
 
 @layer base {
   body {
-    @apply bg-gradient-to-b from-gray-50 to-white text-gray-900 antialiased min-h-screen;
+    @apply bg-gray-50 text-gray-900 antialiased min-h-screen;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-brand-600 text-white px-8 py-3.5 rounded-xl font-semibold hover:bg-brand-700 hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply bg-brand-600 text-white px-8 py-3.5 rounded-xl font-semibold hover:bg-brand-700 hover:shadow-lg hover:shadow-brand-600/25 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .btn-secondary {
@@ -23,6 +23,10 @@
 
   .card {
     @apply bg-white rounded-2xl shadow-sm border border-gray-100 p-8;
+  }
+
+  .hero-section {
+    @apply bg-gradient-to-br from-brand-600 via-brand-700 to-brand-800 text-white;
   }
 
   .badge-success {
@@ -38,10 +42,10 @@
   }
 
   .badge-info {
-    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200;
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-brand-50 text-brand-700 border border-brand-200;
   }
 
   .section-title {
-    @apply text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4;
+    @apply text-xs font-semibold uppercase tracking-wider text-brand-500 mb-4;
   }
 }

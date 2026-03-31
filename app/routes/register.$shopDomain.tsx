@@ -134,24 +134,23 @@ export default function RegisterPage() {
   const errors = (actionData as any)?.errors || {};
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-      <div className="max-w-xl mx-auto px-4 py-10 sm:py-16">
-        {/* Hero Header */}
-        <div className="text-center mb-10">
-          <div
-            className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-5"
-            style={{ background: `linear-gradient(135deg, ${shop.brandColor}20, ${shop.brandColor}40)` }}
-          >
-            <svg className="w-8 h-8" style={{ color: shop.brandColor }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <div className="min-h-screen bg-gray-50">
+      {/* Colored Hero Header */}
+      <div className="hero-section">
+        <div className="max-w-xl mx-auto px-4 pt-12 pb-20 sm:pt-16 sm:pb-24 text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-5 bg-white/15 backdrop-blur-sm">
+            <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Register Your Product</h1>
-          <p className="text-gray-500 mt-2 text-base">Activate your warranty in under a minute</p>
+          <h1 className="text-3xl font-bold text-white tracking-tight">Register Your Product</h1>
+          <p className="text-brand-200 mt-2 text-base">Activate your warranty in under a minute</p>
         </div>
+      </div>
 
-        {/* Form Card */}
-        <div className="card">
+      {/* Form Card - pulled up into hero */}
+      <div className="max-w-xl mx-auto px-4 -mt-12 sm:-mt-16 pb-10">
+        <div className="card shadow-lg">
           {errors._form && (
             <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl text-red-700 text-sm flex items-start gap-3">
               <svg className="w-5 h-5 text-red-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -262,10 +261,10 @@ export default function RegisterPage() {
 
         {/* Footer */}
         <div className="flex items-center justify-center gap-1.5 mt-8">
-          <svg className="w-3.5 h-3.5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="w-3.5 h-3.5 text-brand-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
           </svg>
-          <p className="text-xs text-gray-400">Secured by Registerly</p>
+          <p className="text-xs text-gray-400">Secured by <span className="text-brand-600 font-medium">Registerly</span></p>
         </div>
       </div>
     </div>

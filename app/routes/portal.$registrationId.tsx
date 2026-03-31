@@ -75,30 +75,35 @@ export default function PortalPage() {
   const monthsRemaining = getMonthsRemaining(reg.warrantyExpiresAt);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-      <div className="max-w-2xl mx-auto px-4 py-10 sm:py-16">
-        {/* Success banner */}
-        {justRegistered && (
-          <div className="mb-8 p-4 bg-green-50 border border-green-100 rounded-2xl flex items-start gap-3">
-            <div className="shrink-0 w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
-              <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-              </svg>
+    <div className="min-h-screen bg-gray-50">
+      {/* Colored Hero Header */}
+      <div className="hero-section">
+        <div className="max-w-2xl mx-auto px-4 pt-10 pb-16 sm:pt-14 sm:pb-20">
+          {justRegistered && (
+            <div className="mb-6 p-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl flex items-start gap-3">
+              <div className="shrink-0 w-8 h-8 rounded-full bg-green-400/20 flex items-center justify-center">
+                <svg className="w-4 h-4 text-green-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-semibold text-white">Product registered successfully!</p>
+                <p className="text-sm text-brand-200 mt-0.5">You will receive a confirmation email shortly.</p>
+              </div>
             </div>
-            <div>
-              <p className="font-semibold text-green-800">Product registered successfully!</p>
-              <p className="text-sm text-green-600 mt-0.5">You will receive a confirmation email shortly.</p>
-            </div>
-          </div>
-        )}
+          )}
+          <h1 className="text-2xl font-bold text-white">Your Product Registration</h1>
+          <p className="text-brand-200 mt-1 text-sm">ID: {reg.id.slice(0, 8)}</p>
+        </div>
+      </div>
 
-        {/* Main Card */}
-        <div className="card mb-6">
+      {/* Main Card - pulled up into hero */}
+      <div className="max-w-2xl mx-auto px-4 -mt-8 sm:-mt-12 pb-10">
+        <div className="card shadow-lg mb-6">
           {/* Product heading + status */}
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">{reg.product.name}</h1>
-              <p className="text-sm text-gray-400 mt-1 font-mono">ID: {reg.id.slice(0, 8)}</p>
+              <h2 className="text-xl font-bold text-gray-900">{reg.product.name}</h2>
             </div>
             <span className={statusBadgeClass(reg.status)}>{reg.status}</span>
           </div>
@@ -204,7 +209,7 @@ export default function PortalPage() {
           <svg className="w-3.5 h-3.5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
           </svg>
-          <p className="text-xs text-gray-400">Secured by Registerly</p>
+          <p className="text-xs text-gray-400">Secured by <span className="text-brand-600 font-medium">Registerly</span></p>
         </div>
       </div>
     </div>
