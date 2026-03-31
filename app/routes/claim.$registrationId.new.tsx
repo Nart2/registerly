@@ -83,7 +83,10 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
 
     return redirect(`/portal/${registrationId}`);
   } catch (error: any) {
-    return json({ errors: { _form: error.message } }, { status: 400 });
+    console.error("Claim submission error:", error);
+    const safeMessages = ["Registration not found", "Registration must be approved to submit a claim", "Warranty has expired"];
+    const message = safeMessages.includes(error.message) ? error.message : "Something went wrong. Please try again.";
+    return json({ errors: { _form: message } }, { status: 400 });
   }
 };
 

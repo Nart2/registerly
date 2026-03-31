@@ -16,8 +16,8 @@ export interface CreateRegistrationInput {
 }
 
 export async function createRegistration(input: CreateRegistrationInput) {
-  const product = await prisma.product.findUnique({
-    where: { id: input.productId },
+  const product = await prisma.product.findFirst({
+    where: { id: input.productId, shopId: input.shopId },
   });
 
   if (!product || !product.isActive) {

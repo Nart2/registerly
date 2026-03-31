@@ -109,7 +109,10 @@ export default function RegistrationsPage() {
       } else {
         params.delete(key);
       }
-      params.set("page", "1");
+      // Only reset to page 1 when changing filters, not when paginating
+      if (key !== "page") {
+        params.set("page", "1");
+      }
       setSearchParams(params);
     },
     [searchParams, setSearchParams],

@@ -1,6 +1,6 @@
 import { json } from "@remix-run/node";
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
-import { useLoaderData, useSubmit, useFetcher } from "@remix-run/react";
+import { useLoaderData, useFetcher } from "@remix-run/react";
 import {
   Page,
   Layout,
@@ -9,58 +9,58 @@ import {
   ResourceItem,
   Text,
   Badge,
-  TextField,
   InlineStack,
   BlockStack,
   Button,
   Modal,
-  FormLayout,
-  Select,
-  Thumbnail,
-  Banner,
   EmptyState,
-  Box,
+  Banner,
 } from "@shopify/polaris";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { authenticate } from "~/shopify.server";
 import { getProducts, updateProductWarranty, syncProduct } from "~/services/product.server";
 import { generateQRCode, getRegistrationUrl } from "~/services/qrcode.server";
 import prisma from "~/db.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session, admin } = await authenticate.admin(request);
+  const { session } = await authenticate.admin(request);
 
   const shop = await prisma.shop.findUnique({ where: { domain: session.shop } });
   if (!shop) throw new Response("Shop not found", { status: 404 });
 
-  // Sync products from Shopify
-  try {
-    const response = await admin.rest.resources.Product.all({ session, limit: 250 });
-    for (const p of response.data || []) {
-      await syncProduct(shop.id, String(p.id), p.title || "Untitled Product");
-    }
-  } catch (e) {
-    console.error("Failed to sync products:", e);
-  }
-
   const products = await getProducts(shop.id);
 
-  return json({ products, shopDomain: session.shop });
+  return json({ products, shopDomain: session.shop, shopId: shop.id });
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  const { session, admin } = await authenticate.admin(request);
   const formData = await request.formData();
   const intent = formData.get("intent") as string;
+
+  const shop = await prisma.shop.findUnique({ where: { domain: session.shop } });
+  if (!shop) throw new Response("Shop not found", { status: 404 });
+
+  if (intent === "sync") {
+    try {
+      const response = await admin.rest.resources.Product.all({ session, limit: 250 });
+      let synced = 0;
+      for (const p of response.data || []) {
+        await syncProduct(shop.id, String(p.id), p.title || "Untitled Product");
+        synced++;
+      }
+      return json({ success: true, synced });
+    } catch (e) {
+      console.error("Failed to sync products:", e);
+      return json({ error: "Failed to sync products from Shopify" }, { status: 500 });
+    }
+  }
 
   if (intent === "updateWarranty") {
     const productId = formData.get("productId") as string;
     const warrantyMonths = parseInt(formData.get("warrantyMonths") as string) || 12;
     const isActive = formData.get("isActive") === "true";
     const requireSerialNumber = formData.get("requireSerialNumber") === "true";
-
-    const shop = await prisma.shop.findUnique({ where: { domain: session.shop } });
-    if (!shop) throw new Response("Shop not found", { status: 404 });
 
     await updateProductWarranty(productId, shop.id, { warrantyMonths, isActive, requireSerialNumber });
     return json({ success: true });
@@ -79,13 +79,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 export default function ProductsPage() {
   const { products, shopDomain } = useLoaderData<typeof loader>();
-  const fetcher = useFetcher();
-  const [selectedProduct, setSelectedProduct] = useState<any>(null);
-  const [qrModal, setQrModal] = useState<{ open: boolean; qrCode?: string; url?: string }>({ open: false });
+  const warrantyFetcher = useFetcher();
+  const qrFetcher = useFetcher<{ qrCode?: string; url?: string }>();
+  const syncFetcher = useFetcher();
+  const [qrModalOpen, setQrModalOpen] = useState(false);
+
+  const isSyncing = syncFetcher.state !== "idle";
 
   const handleWarrantyToggle = useCallback(
-    (product: any) => {
-      fetcher.submit(
+    (product: any, e: React.MouseEvent) => {
+      e.stopPropagation();
+      warrantyFetcher.submit(
         {
           intent: "updateWarranty",
           productId: product.id,
@@ -96,21 +100,37 @@ export default function ProductsPage() {
         { method: "post" },
       );
     },
-    [fetcher],
+    [warrantyFetcher],
   );
 
   const handleGenerateQR = useCallback(
-    async (productId: string) => {
-      fetcher.submit(
+    (productId: string, e: React.MouseEvent) => {
+      e.stopPropagation();
+      qrFetcher.submit(
         { intent: "generateQR", shopDomain, productId },
         { method: "post" },
       );
     },
-    [fetcher, shopDomain],
+    [qrFetcher, shopDomain],
   );
 
+  const handleSync = useCallback(() => {
+    syncFetcher.submit({ intent: "sync" }, { method: "post" });
+  }, [syncFetcher]);
+
+  // Open QR modal when data arrives
+  useEffect(() => {
+    if (qrFetcher.data?.qrCode) {
+      setQrModalOpen(true);
+    }
+  }, [qrFetcher.data]);
+
   return (
-    <Page title="Products" subtitle="Manage warranty settings for your products">
+    <Page
+      title="Products"
+      subtitle="Manage warranty settings for your products"
+      primaryAction={{ content: isSyncing ? "Syncing..." : "Sync from Shopify", onAction: handleSync, loading: isSyncing }}
+    >
       <Layout>
         <Layout.Section>
           {products.length === 0 ? (
@@ -119,7 +139,7 @@ export default function ProductsPage() {
                 heading="No products synced yet"
                 image=""
               >
-                <p>Products are automatically synced from your Shopify store. If you have just installed the app, reload the page to trigger a sync.</p>
+                <p>Click "Sync from Shopify" above to import your products.</p>
               </EmptyState>
             </Card>
           ) : (
@@ -128,10 +148,7 @@ export default function ProductsPage() {
                 resourceName={{ singular: "product", plural: "products" }}
                 items={products}
                 renderItem={(product: any) => (
-                  <ResourceItem
-                    id={product.id}
-                    onClick={() => setSelectedProduct(product)}
-                  >
+                  <ResourceItem id={product.id} onClick={() => {}}>
                     <InlineStack align="space-between" blockAlign="center">
                       <BlockStack gap="100">
                         <Text as="p" fontWeight="semibold">{product.name}</Text>
@@ -148,11 +165,11 @@ export default function ProductsPage() {
                         </InlineStack>
                       </BlockStack>
                       <InlineStack gap="200">
-                        <Button size="slim" onClick={() => handleWarrantyToggle(product)}>
+                        <Button size="slim" onClick={(e: any) => handleWarrantyToggle(product, e)}>
                           {product.isActive ? "Disable" : "Enable"} Warranty
                         </Button>
                         {product.isActive && (
-                          <Button size="slim" variant="plain" onClick={() => handleGenerateQR(product.id)}>
+                          <Button size="slim" variant="plain" onClick={(e: any) => handleGenerateQR(product.id, e)}>
                             QR Code
                           </Button>
                         )}
@@ -165,6 +182,32 @@ export default function ProductsPage() {
           )}
         </Layout.Section>
       </Layout>
+
+      {/* QR Code Modal */}
+      <Modal
+        open={qrModalOpen}
+        onClose={() => setQrModalOpen(false)}
+        title="Registration QR Code"
+        secondaryActions={[{ content: "Close", onAction: () => setQrModalOpen(false) }]}
+      >
+        <Modal.Section>
+          {qrFetcher.data?.qrCode && (
+            <BlockStack gap="400" inlineAlign="center">
+              <img
+                src={qrFetcher.data.qrCode}
+                alt="Registration QR Code"
+                style={{ width: 256, height: 256 }}
+              />
+              <Text as="p" variant="bodySm" tone="subdued" alignment="center">
+                Customers can scan this QR code to register their product.
+              </Text>
+              <Text as="p" variant="bodySm" tone="subdued" alignment="center" breakWord>
+                {qrFetcher.data.url}
+              </Text>
+            </BlockStack>
+          )}
+        </Modal.Section>
+      </Modal>
     </Page>
   );
 }

@@ -112,7 +112,7 @@ export default function ClaimsPage() {
       </IndexTable.Cell>
       <IndexTable.Cell>{claim.registration.customerName}</IndexTable.Cell>
       <IndexTable.Cell>{claim.registration.product.name}</IndexTable.Cell>
-      <IndexTable.Cell>{claim.issueType.replace("_", " ")}</IndexTable.Cell>
+      <IndexTable.Cell>{claim.issueType.replaceAll("_", " ")}</IndexTable.Cell>
       <IndexTable.Cell>
         <Text as="span" truncate>{claim.issueDescription}</Text>
       </IndexTable.Cell>
@@ -196,7 +196,7 @@ export default function ClaimsPage() {
                 </InlineStack>
                 <InlineStack gap="200">
                   <Text as="span" variant="bodySm" tone="subdued">Issue:</Text>
-                  <Text as="span" variant="bodySm">{activeClaim.issueType.replace("_", " ")}</Text>
+                  <Text as="span" variant="bodySm">{activeClaim.issueType.replaceAll("_", " ")}</Text>
                 </InlineStack>
                 <Box paddingBlockStart="100" paddingBlockEnd="100">
                   <Divider />

@@ -44,12 +44,13 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     take: 5,
   });
 
-  return json({ shop, stats, recentRegistrations });
+  const appUrl = process.env.APP_URL || "https://registerly.onrender.com";
+  return json({ shop, stats, recentRegistrations, appUrl });
 };
 
 export default function DashboardPage() {
-  const { shop, stats, recentRegistrations } = useLoaderData<typeof loader>();
-  const registrationLink = `${typeof window !== "undefined" ? window.location.origin : ""}/register/${shop.domain}`;
+  const { shop, stats, recentRegistrations, appUrl } = useLoaderData<typeof loader>();
+  const registrationLink = `${appUrl}/register/${shop.domain}`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(registrationLink);

@@ -205,7 +205,7 @@ export default function PortalPage() {
                         <p className="font-medium text-gray-900 text-sm">Claim #{claim.id.slice(0, 8)}</p>
                         <span className={statusBadgeClass(claim.status)}>{claim.status}</span>
                       </div>
-                      <p className="text-sm text-gray-500 mt-1.5">{claim.issueType.replace("_", " ")} — {claim.issueDescription}</p>
+                      <p className="text-sm text-gray-500 mt-1.5">{claim.issueType.replaceAll("_", " ")} — {claim.issueDescription}</p>
                       {claim.merchantNotes && (
                         <p className="text-sm text-gray-600 mt-2 italic">Merchant response: {claim.merchantNotes}</p>
                       )}

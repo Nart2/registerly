@@ -51,12 +51,15 @@ export async function checkRegistrationLimit(shopId: string): Promise<{ allowed:
 
   const planConfig = getPlanConfig(shop.plan);
 
-  if (planConfig.registrationsPerMonth === -1) {
-    return { allowed: true, current: 0, limit: -1 };
-  }
-
   const now = new Date();
   const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+  if (planConfig.registrationsPerMonth === -1) {
+    const rateLimit = await prisma.rateLimit.findUnique({
+      where: { shopId_month: { shopId, month: monthKey } },
+    });
+    return { allowed: true, current: rateLimit?.count || 0, limit: -1 };
+  }
 
   const rateLimit = await prisma.rateLimit.findUnique({
     where: { shopId_month: { shopId, month: monthKey } },

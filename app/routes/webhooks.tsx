@@ -24,8 +24,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const shop = await prisma.shop.findUnique({ where: { domain: shopDomain } });
         if (shop) {
           const { requestDataDeletion, processDataDeletion } = await import("~/services/gdpr.server");
-          const request = await requestDataDeletion(shop.id, customer.email);
-          await processDataDeletion(request.id);
+          const deletionRequest = await requestDataDeletion(shop.id, customer.email);
+          await processDataDeletion(deletionRequest.id);
         }
       }
       return new Response(null, { status: 200 });

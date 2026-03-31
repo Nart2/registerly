@@ -27,7 +27,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   if (!shop) throw new Response("Shop not found", { status: 404 });
 
   const templates = await getEmailTemplates(shop.id);
-  return json({ shop, templates });
+  const appUrl = process.env.APP_URL || "https://registerly.onrender.com";
+  return json({ shop: { ...shop, appUrl }, templates });
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -89,7 +90,7 @@ export default function SettingsPage() {
     CLAIM_UPDATE: "Claim Status Update",
   };
 
-  const registrationLink = `${typeof window !== "undefined" ? window.location.origin : ""}/register/${shop.domain}`;
+  const registrationLink = `${shop.appUrl || "https://registerly.onrender.com"}/register/${shop.domain}`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(registrationLink);
