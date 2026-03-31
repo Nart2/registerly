@@ -94,7 +94,7 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
       customerEmail: parsed.data.customerEmail,
       customerPhone: parsed.data.customerPhone,
       serialNumber: parsed.data.serialNumber,
-      purchaseDate: new Date(parsed.data.purchaseDate),
+      purchaseDate: new Date(parsed.data.purchaseDate + "T12:00:00"),
       purchaseChannel: parsed.data.purchaseChannel,
       consentGiven: true,
     });

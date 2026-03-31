@@ -57,26 +57,29 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const shop = await prisma.shop.findUnique({ where: { domain: session.shop } });
   if (!shop) throw new Response("Shop not found", { status: 404 });
 
-  const registration = await updateRegistrationStatus(registrationId, shop.id, status);
+  let registration;
+  try {
+    registration = await updateRegistrationStatus(registrationId, shop.id, status);
+  } catch (e: any) {
+    return json({ error: e.message || "Registration not found" }, { status: 404 });
+  }
 
   // Send confirmation email if approved
   if (status === "APPROVED") {
     try {
       const { sendEmail } = await import("~/services/email.server");
-      if (shop) {
-        await sendEmail({
-          to: registration.customerEmail,
-          shopId: shop.id,
-          templateType: "REGISTRATION_CONFIRM",
-          variables: {
-            customerName: registration.customerName,
-            productName: registration.product.name,
-            serialNumber: registration.serialNumber || "N/A",
-            warrantyExpiry: registration.warrantyExpiresAt?.toLocaleDateString() || "N/A",
-            portalUrl: `${process.env.APP_URL}/portal/${registration.id}`,
-          },
-        });
-      }
+      await sendEmail({
+        to: registration.customerEmail,
+        shopId: shop.id,
+        templateType: "REGISTRATION_CONFIRM",
+        variables: {
+          customerName: registration.customerName,
+          productName: registration.product.name,
+          serialNumber: registration.serialNumber || "N/A",
+          warrantyExpiry: registration.warrantyExpiresAt?.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) || "N/A",
+          portalUrl: `${process.env.APP_URL}/portal/${registration.id}`,
+        },
+      });
     } catch (e) {
       console.error("Failed to send confirmation email:", e);
     }

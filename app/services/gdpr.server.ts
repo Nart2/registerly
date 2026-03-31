@@ -7,28 +7,44 @@ export async function requestDataDeletion(shopId: string, customerEmail: string)
 }
 
 export async function processDataDeletion(requestId: string) {
-  const request = await prisma.dataDeletionRequest.findUnique({
+  const deletionRequest = await prisma.dataDeletionRequest.findUnique({
     where: { id: requestId },
   });
 
-  if (!request) throw new Error("Deletion request not found");
+  if (!deletionRequest) throw new Error("Deletion request not found");
 
-  // Delete all registrations and associated claims for this customer
-  const registrations = await prisma.registration.findMany({
-    where: { shopId: request.shopId, customerEmail: request.customerEmail },
-  });
+  // Use transaction for atomic deletion
+  await prisma.$transaction(async (tx) => {
+    const registrations = await tx.registration.findMany({
+      where: { shopId: deletionRequest.shopId, customerEmail: deletionRequest.customerEmail },
+    });
 
-  for (const reg of registrations) {
-    await prisma.claim.deleteMany({ where: { registrationId: reg.id } });
-  }
+    for (const reg of registrations) {
+      // Delete claims
+      await tx.claim.deleteMany({ where: { registrationId: reg.id } });
 
-  await prisma.registration.deleteMany({
-    where: { shopId: request.shopId, customerEmail: request.customerEmail },
-  });
+      // Reset serial number isUsed flag if applicable
+      if (reg.serialNumber) {
+        await tx.serialNumber.updateMany({
+          where: {
+            shopId: deletionRequest.shopId,
+            serialNumber: reg.serialNumber,
+          },
+          data: { isUsed: false },
+        });
+      }
+    }
 
-  await prisma.dataDeletionRequest.update({
-    where: { id: requestId },
-    data: { status: "COMPLETED", completedAt: new Date() },
+    // Delete registrations
+    await tx.registration.deleteMany({
+      where: { shopId: deletionRequest.shopId, customerEmail: deletionRequest.customerEmail },
+    });
+
+    // Mark request as completed and clear PII from the request itself
+    await tx.dataDeletionRequest.update({
+      where: { id: requestId },
+      data: { status: "COMPLETED", completedAt: new Date(), customerEmail: "deleted" },
+    });
   });
 }
 
@@ -42,17 +58,26 @@ export async function exportCustomerData(shopId: string, customerEmail: string) 
     customerEmail,
     exportedAt: new Date().toISOString(),
     registrations: registrations.map((r) => ({
+      customerName: r.customerName,
+      customerPhone: r.customerPhone,
       product: r.product.name,
       serialNumber: r.serialNumber,
       purchaseDate: r.purchaseDate.toISOString(),
       purchaseChannel: r.purchaseChannel,
+      proofOfPurchaseUrl: r.proofOfPurchaseUrl,
+      shopifyOrderId: r.shopifyOrderId,
       warrantyExpiresAt: r.warrantyExpiresAt?.toISOString(),
       status: r.status,
+      consentGiven: r.consentGiven,
+      consentTimestamp: r.consentTimestamp?.toISOString(),
       claims: r.claims.map((c) => ({
         issueType: c.issueType,
         issueDescription: c.issueDescription,
         status: c.status,
+        merchantNotes: c.merchantNotes,
+        attachmentUrls: c.attachmentUrls,
         createdAt: c.createdAt.toISOString(),
+        updatedAt: c.updatedAt.toISOString(),
       })),
     })),
   };

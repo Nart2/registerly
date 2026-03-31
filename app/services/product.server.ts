@@ -37,11 +37,16 @@ export async function importSerialNumbers(
   productId: string,
   serialNumbers: string[],
 ) {
-  const data = serialNumbers.map((sn) => ({
-    shopId,
-    productId,
-    serialNumber: sn.trim(),
-  }));
+  // Verify product belongs to shop
+  const product = await prisma.product.findFirst({ where: { id: productId, shopId } });
+  if (!product) {
+    throw new Error("Product not found");
+  }
+
+  const data = serialNumbers
+    .map((sn) => sn.trim())
+    .filter((sn) => sn.length > 0)
+    .map((sn) => ({ shopId, productId, serialNumber: sn }));
 
   return prisma.serialNumber.createMany({
     data,

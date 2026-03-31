@@ -62,7 +62,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const isActive = formData.get("isActive") === "true";
     const requireSerialNumber = formData.get("requireSerialNumber") === "true";
 
-    await updateProductWarranty(productId, shop.id, { warrantyMonths, isActive, requireSerialNumber });
+    try {
+      await updateProductWarranty(productId, shop.id, { warrantyMonths, isActive, requireSerialNumber });
+    } catch (e: any) {
+      return json({ error: e.message || "Product not found" }, { status: 404 });
+    }
     return json({ success: true });
   }
 

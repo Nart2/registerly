@@ -107,10 +107,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       return json<ActionData>({ error: "No valid serial numbers found." });
     }
 
-    const existingCount = await prisma.serialNumber.count({
-      where: { productId },
-    });
-
     const result = await importSerialNumbers(shop.id, productId, lines);
 
     const imported = result.count;

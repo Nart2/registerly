@@ -51,7 +51,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const shop = await prisma.shop.findUnique({ where: { domain: session.shop } });
   if (!shop) throw new Response("Shop not found", { status: 404 });
 
-  const claim = await updateClaimStatus(claimId, shop.id, rawStatus as any, merchantNotes);
+  let claim;
+  try {
+    claim = await updateClaimStatus(claimId, shop.id, rawStatus as any, merchantNotes);
+  } catch (e: any) {
+    return json({ error: e.message || "Claim not found" }, { status: 404 });
+  }
 
   // Send status update email
   try {

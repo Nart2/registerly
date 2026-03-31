@@ -99,7 +99,7 @@ async function handleOrderPaid(shopDomain: string, payload: any) {
           customerName,
           productName: product.name,
           serialNumber: "N/A",
-          warrantyExpiry: registration.warrantyExpiresAt?.toLocaleDateString() || "N/A",
+          warrantyExpiry: registration.warrantyExpiresAt?.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) || "N/A",
           portalUrl: `${process.env.APP_URL}/portal/${registration.id}`,
         },
       });
