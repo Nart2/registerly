@@ -34,6 +34,7 @@ export default function LandingPage() {
               <a href="#pricing" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">Pricing</a>
               <a href="#faq" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">FAQ</a>
               <Link to="/privacy" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">Privacy</Link>
+              <Link to="/impressum" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">Impressum</Link>
             </div>
           </div>
         </div>
@@ -370,6 +371,7 @@ export default function LandingPage() {
             </div>
             <div className="flex items-center gap-6 text-sm text-gray-500">
               <Link to="/privacy" className="hover:text-gray-900 transition-colors">Privacy Policy</Link>
+              <Link to="/impressum" className="hover:text-gray-900 transition-colors">Impressum</Link>
               <a href="mailto:support@registerly.app" className="hover:text-gray-900 transition-colors">Support</a>
             </div>
             <p className="text-sm text-gray-400">&copy; {new Date().getFullYear()} Registerly. All rights reserved.</p>
