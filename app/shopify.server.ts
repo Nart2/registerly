@@ -17,7 +17,7 @@ const shopify = shopifyApp({
   appUrl: process.env.APP_URL || "",
   authPathPrefix: "/auth",
   sessionStorage: new PrismaSessionStorage(prisma),
-  distribution: AppDistribution.AppStore,
+  distribution: AppDistribution.ShopifyAdmin,
   restResources,
   webhooks: {
     ORDERS_PAID: {
@@ -31,7 +31,7 @@ const shopify = shopifyApp({
     },
   },
   future: {
-    unstable_newEmbeddedAuthStrategy: false,
+    unstable_newEmbeddedAuthStrategy: true,
   },
   ...(process.env.SHOP_CUSTOM_DOMAIN
     ? { customShopDomains: [process.env.SHOP_CUSTOM_DOMAIN] }
