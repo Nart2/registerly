@@ -63,7 +63,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   if (status === "APPROVED") {
     try {
       const { sendEmail } = await import("~/services/email.server");
-      const shop = await prisma.shop.findUnique({ where: { domain: session.shop } });
       if (shop) {
         await sendEmail({
           to: registration.customerEmail,

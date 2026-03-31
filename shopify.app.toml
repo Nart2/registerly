@@ -18,6 +18,10 @@ api_version = "2024-10"
 topics = [ "orders/paid" ]
 uri = "/webhooks"
 
+[[webhooks.subscriptions]]
+topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
+uri = "/webhooks"
+
 [app_proxy]
 subpath = "registerly"
 prefix = "apps"

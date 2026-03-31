@@ -133,7 +133,8 @@ export default function RegisterPage() {
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
   const errors = (actionData as any)?.errors || {};
-  const [step, setStep] = useState(1);
+  const hasErrors = Object.keys(errors).length > 0;
+  const [step, setStep] = useState(hasErrors ? 3 : 1);
 
   const stepLabels = ["Choose product", "Your details", "Confirm"];
 

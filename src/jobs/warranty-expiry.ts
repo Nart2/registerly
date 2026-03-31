@@ -2,16 +2,32 @@ import { PrismaClient } from "@prisma/client";
 import { Resend } from "resend";
 
 const prisma = new PrismaClient();
-const resend = new Resend(process.env.RESEND_API_KEY);
+
+const resend = process.env.RESEND_API_KEY
+  ? new Resend(process.env.RESEND_API_KEY)
+  : null;
+
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
 async function checkExpiringWarranties() {
   console.log(`[${new Date().toISOString()}] Checking for expiring warranties...`);
+
+  if (!resend) {
+    console.log("[Warranty Expiry] No RESEND_API_KEY set, skipping email notifications.");
+    return;
+  }
 
   const now = new Date();
   const thirtyDaysFromNow = new Date();
   thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
 
-  // Find registrations expiring in the next 30 days that haven't been notified
   const expiringRegistrations = await prisma.registration.findMany({
     where: {
       status: "APPROVED",
@@ -30,7 +46,6 @@ async function checkExpiringWarranties() {
   console.log(`Found ${expiringRegistrations.length} expiring registrations`);
 
   for (const registration of expiringRegistrations) {
-    // Get the email template
     const template = await prisma.emailTemplate.findUnique({
       where: {
         shopId_type: {
@@ -45,7 +60,6 @@ async function checkExpiringWarranties() {
       continue;
     }
 
-    // Replace variables
     let subject = template.subject;
     let body = template.body;
 
@@ -53,14 +67,14 @@ async function checkExpiringWarranties() {
       customerName: registration.customerName,
       productName: registration.product.name,
       serialNumber: registration.serialNumber || "N/A",
-      warrantyExpiry: registration.warrantyExpiresAt?.toLocaleDateString() || "N/A",
+      warrantyExpiry: registration.warrantyExpiresAt?.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) || "N/A",
       portalUrl: `${process.env.APP_URL}/portal/${registration.id}`,
     };
 
     for (const [key, value] of Object.entries(variables)) {
       const placeholder = `{{${key}}}`;
       subject = subject.replaceAll(placeholder, value);
-      body = body.replaceAll(placeholder, value);
+      body = body.replaceAll(placeholder, escapeHtml(value));
     }
 
     try {
@@ -81,7 +95,6 @@ async function checkExpiringWarranties() {
 </html>`,
       });
 
-      // Mark as notified
       await prisma.registration.update({
         where: { id: registration.id },
         data: { expiryNotificationSent: true },
@@ -96,7 +109,6 @@ async function checkExpiringWarranties() {
   console.log(`[${new Date().toISOString()}] Warranty expiry check complete`);
 }
 
-// Run immediately when called
 checkExpiringWarranties()
   .catch(console.error)
   .finally(() => prisma.$disconnect());

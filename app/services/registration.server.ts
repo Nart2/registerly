@@ -25,52 +25,64 @@ export async function createRegistration(input: CreateRegistrationInput) {
   }
 
   // Validate serial number if required
-  if (product.requireSerialNumber && input.serialNumber) {
-    const serial = await prisma.serialNumber.findUnique({
-      where: {
-        shopId_serialNumber: {
-          shopId: input.shopId,
-          serialNumber: input.serialNumber,
-        },
-      },
-    });
-
-    if (!serial) {
-      throw new Error("Invalid serial number");
-    }
-    if (serial.isUsed) {
-      throw new Error("Serial number already registered");
-    }
-
-    // Mark serial as used
-    await prisma.serialNumber.update({
-      where: { id: serial.id },
-      data: { isUsed: true },
-    });
+  if (product.requireSerialNumber && !input.serialNumber) {
+    throw new Error("Serial number is required");
   }
 
-  // Calculate warranty expiry
+  // Calculate warranty expiry (safe month math — clamp to last day of target month)
   const warrantyExpiresAt = new Date(input.purchaseDate);
-  warrantyExpiresAt.setMonth(warrantyExpiresAt.getMonth() + product.warrantyMonths);
+  const targetMonth = warrantyExpiresAt.getMonth() + product.warrantyMonths;
+  warrantyExpiresAt.setDate(1); // avoid overflow
+  warrantyExpiresAt.setMonth(targetMonth);
+  // Clamp to last day of target month if original day was higher
+  const originalDay = new Date(input.purchaseDate).getDate();
+  const lastDayOfTargetMonth = new Date(warrantyExpiresAt.getFullYear(), warrantyExpiresAt.getMonth() + 1, 0).getDate();
+  warrantyExpiresAt.setDate(Math.min(originalDay, lastDayOfTargetMonth));
 
-  return prisma.registration.create({
-    data: {
-      shopId: input.shopId,
-      productId: input.productId,
-      customerName: input.customerName,
-      customerEmail: input.customerEmail,
-      customerPhone: input.customerPhone,
-      serialNumber: input.serialNumber,
-      purchaseDate: input.purchaseDate,
-      purchaseChannel: input.purchaseChannel,
-      proofOfPurchaseUrl: input.proofOfPurchaseUrl,
-      shopifyOrderId: input.shopifyOrderId,
-      warrantyExpiresAt,
-      consentGiven: input.consentGiven,
-      consentTimestamp: input.consentGiven ? new Date() : null,
-      status: "PENDING",
-    },
-    include: { product: true },
+  // Use transaction for serial number marking + registration creation (atomic)
+  return prisma.$transaction(async (tx) => {
+    if (product.requireSerialNumber && input.serialNumber) {
+      const serial = await tx.serialNumber.findUnique({
+        where: {
+          shopId_serialNumber: {
+            shopId: input.shopId,
+            serialNumber: input.serialNumber,
+          },
+        },
+      });
+
+      if (!serial) {
+        throw new Error("Invalid serial number");
+      }
+      if (serial.isUsed) {
+        throw new Error("Serial number already registered");
+      }
+
+      await tx.serialNumber.update({
+        where: { id: serial.id },
+        data: { isUsed: true },
+      });
+    }
+
+    return tx.registration.create({
+      data: {
+        shopId: input.shopId,
+        productId: input.productId,
+        customerName: input.customerName,
+        customerEmail: input.customerEmail,
+        customerPhone: input.customerPhone,
+        serialNumber: input.serialNumber,
+        purchaseDate: input.purchaseDate,
+        purchaseChannel: input.purchaseChannel,
+        proofOfPurchaseUrl: input.proofOfPurchaseUrl,
+        shopifyOrderId: input.shopifyOrderId,
+        warrantyExpiresAt,
+        consentGiven: input.consentGiven,
+        consentTimestamp: input.consentGiven ? new Date() : null,
+        status: "PENDING",
+      },
+      include: { product: true },
+    });
   });
 }
 

@@ -64,7 +64,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         customerName: claim.registration.customerName,
         productName: claim.registration.product.name,
         claimId: claim.id.slice(0, 8),
-        status,
+        status: rawStatus,
         merchantNotes: merchantNotes || "",
         portalUrl: `${process.env.APP_URL}/portal/${claim.registration.id}`,
       },
