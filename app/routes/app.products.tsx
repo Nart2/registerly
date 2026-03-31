@@ -18,6 +18,8 @@ import {
   Select,
   Thumbnail,
   Banner,
+  EmptyState,
+  Box,
 } from "@shopify/polaris";
 import { useState, useCallback } from "react";
 import { authenticate } from "~/shopify.server";
@@ -108,47 +110,56 @@ export default function ProductsPage() {
     <Page title="Products" subtitle="Manage warranty settings for your products">
       <Layout>
         <Layout.Section>
-          <Card padding="0">
-            <ResourceList
-              resourceName={{ singular: "product", plural: "products" }}
-              items={products}
-              renderItem={(product: any) => (
-                <ResourceItem
-                  id={product.id}
-                  onClick={() => setSelectedProduct(product)}
-                >
-                  <InlineStack align="space-between" blockAlign="center">
-                    <BlockStack gap="100">
-                      <Text as="p" fontWeight="semibold">{product.name}</Text>
-                      <InlineStack gap="200">
-                        <Badge tone={product.isActive ? "success" : undefined}>
-                          {product.isActive ? "Warranty Active" : "No Warranty"}
-                        </Badge>
-                        {product.isActive && (
-                          <Text as="span" tone="subdued">
-                            {product.warrantyMonths} months
+          {products.length === 0 ? (
+            <Card>
+              <EmptyState
+                heading="No products synced yet"
+                image=""
+              >
+                <p>Products are automatically synced from your Shopify store. If you have just installed the app, reload the page to trigger a sync.</p>
+              </EmptyState>
+            </Card>
+          ) : (
+            <Card padding="0">
+              <ResourceList
+                resourceName={{ singular: "product", plural: "products" }}
+                items={products}
+                renderItem={(product: any) => (
+                  <ResourceItem
+                    id={product.id}
+                    onClick={() => setSelectedProduct(product)}
+                  >
+                    <InlineStack align="space-between" blockAlign="center">
+                      <BlockStack gap="100">
+                        <Text as="p" fontWeight="semibold">{product.name}</Text>
+                        <InlineStack gap="200" blockAlign="center">
+                          <Badge tone={product.isActive ? "success" : "enabled"}>
+                            {product.isActive ? "Warranty Active" : "No Warranty"}
+                          </Badge>
+                          {product.isActive && (
+                            <Badge tone="info">{product.warrantyMonths} months</Badge>
+                          )}
+                          <Text as="span" tone="subdued" variant="bodySm">
+                            {product._count.registrations} {product._count.registrations === 1 ? "registration" : "registrations"}
                           </Text>
-                        )}
-                        <Text as="span" tone="subdued">
-                          {product._count.registrations} registrations
-                        </Text>
-                      </InlineStack>
-                    </BlockStack>
-                    <InlineStack gap="200">
-                      <Button size="slim" onClick={() => handleWarrantyToggle(product)}>
-                        {product.isActive ? "Disable" : "Enable"} Warranty
-                      </Button>
-                      {product.isActive && (
-                        <Button size="slim" variant="plain" onClick={() => handleGenerateQR(product.id)}>
-                          QR Code
+                        </InlineStack>
+                      </BlockStack>
+                      <InlineStack gap="200">
+                        <Button size="slim" onClick={() => handleWarrantyToggle(product)}>
+                          {product.isActive ? "Disable" : "Enable"} Warranty
                         </Button>
-                      )}
+                        {product.isActive && (
+                          <Button size="slim" variant="plain" onClick={() => handleGenerateQR(product.id)}>
+                            QR Code
+                          </Button>
+                        )}
+                      </InlineStack>
                     </InlineStack>
-                  </InlineStack>
-                </ResourceItem>
-              )}
-            />
-          </Card>
+                  </ResourceItem>
+                )}
+              />
+            </Card>
+          )}
         </Layout.Section>
       </Layout>
     </Page>

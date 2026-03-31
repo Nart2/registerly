@@ -13,6 +13,8 @@ import {
   Select,
   Banner,
   Divider,
+  Badge,
+  Box,
 } from "@shopify/polaris";
 import { useState, useCallback } from "react";
 import { authenticate } from "~/shopify.server";
@@ -87,21 +89,44 @@ export default function SettingsPage() {
     CLAIM_UPDATE: "Claim Status Update",
   };
 
+  const registrationLink = `${typeof window !== "undefined" ? window.location.origin : ""}/register/${shop.domain}`;
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(registrationLink);
+  };
+
   return (
     <Page title="Settings">
       <Layout>
         <Layout.Section>
           <Card>
             <BlockStack gap="400">
-              <Text as="h2" variant="headingMd">Branding</Text>
-              <TextField
-                label="Brand Color"
-                value={brandColor}
-                onChange={setBrandColor}
-                autoComplete="off"
-                helpText="Used on your public registration and portal pages"
-              />
-              <Button onClick={handleSaveBranding}>Save Branding</Button>
+              <Text as="h2" variant="headingMd">Brand Settings</Text>
+              <InlineStack gap="400" blockAlign="end">
+                <Box minWidth="0" maxWidth="100%">
+                  <TextField
+                    label="Brand Color"
+                    value={brandColor}
+                    onChange={setBrandColor}
+                    autoComplete="off"
+                    helpText="This color will be used on your public registration page"
+                  />
+                </Box>
+                <div
+                  style={{
+                    width: "40px",
+                    height: "40px",
+                    borderRadius: "8px",
+                    backgroundColor: brandColor || "#000000",
+                    border: "1px solid var(--p-color-border)",
+                    flexShrink: 0,
+                    marginBottom: "20px",
+                  }}
+                />
+              </InlineStack>
+              <Box>
+                <Button onClick={handleSaveBranding}>Save Branding</Button>
+              </Box>
             </BlockStack>
           </Card>
         </Layout.Section>
@@ -109,43 +134,54 @@ export default function SettingsPage() {
         <Layout.Section>
           <Card>
             <BlockStack gap="400">
-              <Text as="h2" variant="headingMd">Email Templates</Text>
-              <Text as="p" tone="subdued">
-                Use {"{{variables}}"} in templates: customerName, productName, serialNumber, warrantyExpiry, claimId, status, portalUrl, merchantNotes
-              </Text>
+              <BlockStack gap="100">
+                <Text as="h2" variant="headingMd">Email Templates</Text>
+                <Text as="p" tone="subdued">Customize the emails your customers receive</Text>
+              </BlockStack>
+
+              <Banner tone="info">
+                <p>
+                  Available variables: {"{{customerName}}"}, {"{{productName}}"}, {"{{serialNumber}}"}, {"{{warrantyExpiry}}"}, {"{{portalUrl}}"}, {"{{claimId}}"}, {"{{status}}"}, {"{{merchantNotes}}"}
+                </p>
+              </Banner>
+
               <Divider />
+
               {templates.map((template: any) => (
-                <Card key={template.id}>
-                  <BlockStack gap="300">
-                    <Text as="h3" variant="headingSm">{templateLabels[template.type] || template.type}</Text>
-                    {editingTemplate?.type === template.type ? (
-                      <BlockStack gap="300">
-                        <TextField
-                          label="Subject"
-                          value={editingTemplate.subject}
-                          onChange={(v) => setEditingTemplate({ ...editingTemplate, subject: v })}
-                          autoComplete="off"
-                        />
-                        <TextField
-                          label="Body (HTML)"
-                          value={editingTemplate.body}
-                          onChange={(v) => setEditingTemplate({ ...editingTemplate, body: v })}
-                          multiline={8}
-                          autoComplete="off"
-                        />
-                        <InlineStack gap="200">
-                          <Button variant="primary" onClick={handleSaveTemplate}>Save</Button>
-                          <Button onClick={() => setEditingTemplate(null)}>Cancel</Button>
-                        </InlineStack>
-                      </BlockStack>
-                    ) : (
-                      <BlockStack gap="200">
-                        <Text as="p"><strong>Subject:</strong> {template.subject}</Text>
+                <BlockStack key={template.id} gap="300">
+                  <InlineStack gap="200" blockAlign="center">
+                    <Badge>{templateLabels[template.type] || template.type}</Badge>
+                  </InlineStack>
+                  {editingTemplate?.type === template.type ? (
+                    <BlockStack gap="300">
+                      <TextField
+                        label="Subject"
+                        value={editingTemplate.subject}
+                        onChange={(v) => setEditingTemplate({ ...editingTemplate, subject: v })}
+                        autoComplete="off"
+                      />
+                      <TextField
+                        label="Body (HTML)"
+                        value={editingTemplate.body}
+                        onChange={(v) => setEditingTemplate({ ...editingTemplate, body: v })}
+                        multiline={8}
+                        autoComplete="off"
+                      />
+                      <InlineStack gap="200">
+                        <Button variant="primary" onClick={handleSaveTemplate}>Save</Button>
+                        <Button onClick={() => setEditingTemplate(null)}>Cancel</Button>
+                      </InlineStack>
+                    </BlockStack>
+                  ) : (
+                    <BlockStack gap="200">
+                      <Text as="p" tone="subdued" variant="bodySm">Subject: {template.subject}</Text>
+                      <Box>
                         <Button size="slim" onClick={() => setEditingTemplate(template)}>Edit Template</Button>
-                      </BlockStack>
-                    )}
-                  </BlockStack>
-                </Card>
+                      </Box>
+                    </BlockStack>
+                  )}
+                  <Divider />
+                </BlockStack>
               ))}
             </BlockStack>
           </Card>
@@ -155,9 +191,13 @@ export default function SettingsPage() {
           <Card>
             <BlockStack gap="300">
               <Text as="h2" variant="headingMd">Registration Link</Text>
-              <Text as="p">
-                Share this link with customers: <strong>{process.env.APP_URL || "https://your-app.railway.app"}/register/{shop.domain}</strong>
-              </Text>
+              <Text as="p" tone="subdued">Share this link on your website or send it to customers</Text>
+              <Box padding="300" background="bg-surface-secondary" borderRadius="200">
+                <InlineStack gap="200" align="space-between" blockAlign="center" wrap={false}>
+                  <Text as="p" variant="bodySm" truncate>{registrationLink}</Text>
+                  <Button size="slim" onClick={handleCopyLink}>Copy</Button>
+                </InlineStack>
+              </Box>
             </BlockStack>
           </Card>
         </Layout.Section>

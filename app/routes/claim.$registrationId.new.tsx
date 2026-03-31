@@ -87,6 +87,13 @@ export const action = async ({ params, request }: ActionFunctionArgs) => {
   }
 };
 
+const issueTypes = [
+  { value: "DEFECTIVE", label: "Defective", description: "Product is not working as expected" },
+  { value: "DAMAGED", label: "Damaged", description: "Product arrived damaged or broke during use" },
+  { value: "MISSING_PARTS", label: "Missing Parts", description: "Parts or accessories are missing" },
+  { value: "OTHER", label: "Other", description: "Another issue not listed above" },
+];
+
 export default function NewClaimPage() {
   const { registration, brandColor } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
@@ -95,54 +102,89 @@ export default function NewClaimPage() {
   const errors = (actionData as any)?.errors || {};
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-lg mx-auto px-4 py-8 sm:py-12">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Submit Warranty Claim</h1>
-          <p className="text-gray-500 mt-2">
-            {registration.productName} — {registration.customerName}
-          </p>
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+      <div className="max-w-xl mx-auto px-4 py-10 sm:py-16">
+        {/* Header */}
+        <div className="text-center mb-6">
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Submit Warranty Claim</h1>
+        </div>
+
+        {/* Context bar */}
+        <div className="mb-6 flex items-center justify-center gap-4 py-3 px-5 bg-gray-50 rounded-xl border border-gray-100 text-sm text-gray-500">
+          <span className="flex items-center gap-1.5">
+            <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+            {registration.productName}
+          </span>
+          <span className="text-gray-300">|</span>
+          <span className="flex items-center gap-1.5">
+            <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            {registration.customerName}
+          </span>
         </div>
 
         <div className="card">
           {errors._form && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-              {errors._form}
+            <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl text-red-700 text-sm flex items-start gap-3">
+              <svg className="w-5 h-5 text-red-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+              <span>{errors._form}</span>
             </div>
           )}
 
-          <Form method="post" className="space-y-5">
+          <Form method="post" className="space-y-8">
+            {/* Issue Type as radio cards */}
             <div>
-              <label htmlFor="issueType" className="block text-sm font-medium text-gray-700 mb-1">Issue Type *</label>
-              <select id="issueType" name="issueType" className="input-field" required>
-                <option value="">Select issue type...</option>
-                <option value="DEFECTIVE">Defective / Not Working</option>
-                <option value="DAMAGED">Damaged</option>
-                <option value="MISSING_PARTS">Missing Parts</option>
-                <option value="OTHER">Other</option>
-              </select>
-              {errors.issueType && <p className="text-red-500 text-sm mt-1">{errors.issueType}</p>}
+              <p className="section-title">What happened?</p>
+              <div className="grid grid-cols-2 gap-3">
+                {issueTypes.map((type) => (
+                  <label key={type.value} className="relative cursor-pointer">
+                    <input
+                      type="radio"
+                      name="issueType"
+                      value={type.value}
+                      required
+                      className="peer sr-only"
+                    />
+                    <div className="p-4 rounded-xl border-2 border-gray-200 bg-white transition-all duration-200 peer-checked:border-current peer-checked:bg-opacity-5 hover:border-gray-300 peer-checked:shadow-sm" style={{ ["--tw-border-opacity" as any]: undefined }}>
+                      <p className="font-medium text-sm text-gray-900 peer-checked:text-current">{type.label}</p>
+                      <p className="text-xs text-gray-400 mt-1 leading-relaxed">{type.description}</p>
+                    </div>
+                    <style>{`
+                      input[value="${type.value}"]:checked ~ div {
+                        border-color: ${brandColor};
+                        background-color: ${brandColor}08;
+                      }
+                    `}</style>
+                  </label>
+                ))}
+              </div>
+              {errors.issueType && <p className="text-red-500 text-sm mt-2">{errors.issueType}</p>}
             </div>
 
+            {/* Description */}
             <div>
-              <label htmlFor="issueDescription" className="block text-sm font-medium text-gray-700 mb-1">
-                Describe the Issue *
-              </label>
+              <p className="section-title">Describe the issue</p>
               <textarea
                 id="issueDescription"
                 name="issueDescription"
-                rows={5}
+                rows={8}
                 className="input-field"
                 required
                 minLength={10}
-                placeholder="Please describe what happened, when you noticed the issue, and any steps you've already taken..."
+                placeholder="Tell us what happened. Include details like when you first noticed the issue, what you were doing at the time, and any troubleshooting steps you have already tried..."
               />
-              {errors.issueDescription && <p className="text-red-500 text-sm mt-1">{errors.issueDescription}</p>}
+              {errors.issueDescription && <p className="text-red-500 text-sm mt-1.5">{errors.issueDescription}</p>}
             </div>
 
+            {/* Submit */}
             <button
               type="submit"
-              className="btn-primary w-full"
+              className="btn-primary w-full text-base"
               disabled={isSubmitting}
               style={{ backgroundColor: brandColor }}
             >
@@ -151,7 +193,13 @@ export default function NewClaimPage() {
           </Form>
         </div>
 
-        <p className="text-center text-xs text-gray-400 mt-6">Powered by Registerly</p>
+        {/* Footer */}
+        <div className="flex items-center justify-center gap-1.5 mt-8">
+          <svg className="w-3.5 h-3.5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+          <p className="text-xs text-gray-400">Secured by Registerly</p>
+        </div>
       </div>
     </div>
   );

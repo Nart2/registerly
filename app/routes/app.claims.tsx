@@ -13,7 +13,9 @@ import {
   Modal,
   TextField,
   BlockStack,
+  Box,
   Select,
+  Divider,
 } from "@shopify/polaris";
 import { useState, useCallback } from "react";
 import { authenticate } from "~/shopify.server";
@@ -117,43 +119,83 @@ export default function ClaimsPage() {
     </IndexTable.Row>
   ));
 
+  const activeClaim = activeModal ? claims.find((c: any) => c.id === activeModal) : null;
+
+  const claimsContent = claims.length === 0 && total === 0 ? (
+    <Card>
+      <BlockStack gap="300" align="center">
+        <Text as="h2" variant="headingMd">No warranty claims yet</Text>
+        <Text as="p" variant="bodyMd" tone="subdued">
+          When customers submit warranty claims, they'll appear here for you to review and manage.
+        </Text>
+        <Text as="p" variant="bodySm" tone="subdued">
+          No claims is a good sign -- your products are holding up well!
+        </Text>
+      </BlockStack>
+    </Card>
+  ) : (
+    <Card padding="0">
+      <Box padding="400" paddingBlockEnd="0">
+        <Text as="h2" variant="headingMd">Claims ({total} total)</Text>
+      </Box>
+      <IndexTable
+        resourceName={{ singular: "claim", plural: "claims" }}
+        itemCount={claims.length}
+        headings={[
+          { title: "Claim ID" },
+          { title: "Customer" },
+          { title: "Product" },
+          { title: "Issue type" },
+          { title: "Description" },
+          { title: "Status" },
+          { title: "Date filed" },
+          { title: "Actions" },
+        ]}
+        selectable={false}
+      >
+        {rowMarkup}
+      </IndexTable>
+    </Card>
+  );
+
   return (
-    <Page title="Claims" subtitle={`${total} total claims`}>
+    <Page title="Claims">
       <Layout>
         <Layout.Section>
-          <Card padding="0">
-            <IndexTable
-              resourceName={{ singular: "claim", plural: "claims" }}
-              itemCount={claims.length}
-              headings={[
-                { title: "Claim ID" },
-                { title: "Customer" },
-                { title: "Product" },
-                { title: "Issue Type" },
-                { title: "Description" },
-                { title: "Status" },
-                { title: "Created" },
-                { title: "Actions" },
-              ]}
-              selectable={false}
-            >
-              {rowMarkup}
-            </IndexTable>
-          </Card>
+          {claimsContent}
         </Layout.Section>
       </Layout>
 
       <Modal
         open={!!activeModal}
         onClose={() => setActiveModal(null)}
-        title="Manage Claim"
-        primaryAction={{ content: "Update", onAction: handleUpdateClaim }}
+        title={activeClaim ? `Manage Claim #${activeClaim.id.slice(0, 8)}` : "Manage Claim"}
+        primaryAction={{ content: "Update claim", onAction: handleUpdateClaim }}
         secondaryActions={[{ content: "Cancel", onAction: () => setActiveModal(null) }]}
       >
         <Modal.Section>
           <BlockStack gap="400">
+            {activeClaim && (
+              <BlockStack gap="200">
+                <InlineStack gap="200">
+                  <Text as="span" variant="bodySm" tone="subdued">Customer:</Text>
+                  <Text as="span" variant="bodySm" fontWeight="semibold">{activeClaim.registration.customerName}</Text>
+                </InlineStack>
+                <InlineStack gap="200">
+                  <Text as="span" variant="bodySm" tone="subdued">Product:</Text>
+                  <Text as="span" variant="bodySm" fontWeight="semibold">{activeClaim.registration.product.name}</Text>
+                </InlineStack>
+                <InlineStack gap="200">
+                  <Text as="span" variant="bodySm" tone="subdued">Issue:</Text>
+                  <Text as="span" variant="bodySm">{activeClaim.issueType.replace("_", " ")}</Text>
+                </InlineStack>
+                <Box paddingBlockStart="100" paddingBlockEnd="100">
+                  <Divider />
+                </Box>
+              </BlockStack>
+            )}
             <Select
-              label="Status"
+              label="Update status"
               options={[
                 { label: "Open", value: "OPEN" },
                 { label: "In Review", value: "IN_REVIEW" },
@@ -165,12 +207,12 @@ export default function ClaimsPage() {
               onChange={setNewStatus}
             />
             <TextField
-              label="Merchant Notes"
+              label="Notes for customer (will be included in the email)"
               value={notes}
               onChange={setNotes}
               multiline={4}
               autoComplete="off"
-              helpText="Notes visible to the customer"
+              helpText="The customer will see these notes when they check their claim status"
             />
           </BlockStack>
         </Modal.Section>

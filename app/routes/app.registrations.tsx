@@ -12,6 +12,8 @@ import {
   ChoiceList,
   Button,
   InlineStack,
+  BlockStack,
+  Box,
   Pagination,
 } from "@shopify/polaris";
 import { useState, useCallback } from "react";
@@ -139,23 +141,48 @@ export default function RegistrationsPage() {
     </IndexTable.Row>
   ));
 
+  if (registrations.length === 0 && total === 0) {
+    return (
+      <Page title="Registrations">
+        <Layout>
+          <Layout.Section>
+            <Card>
+              <BlockStack gap="300" align="center">
+                <Text as="h2" variant="headingMd">No registrations yet</Text>
+                <Text as="p" variant="bodyMd" tone="subdued">
+                  Share your registration link with customers to get started. You can find the link on your Dashboard.
+                </Text>
+                <Box paddingBlockStart="200">
+                  <Button url="/app" variant="primary">Go to Dashboard</Button>
+                </Box>
+              </BlockStack>
+            </Card>
+          </Layout.Section>
+        </Layout>
+      </Page>
+    );
+  }
+
   return (
-    <Page title="Registrations" subtitle={`${total} total registrations`}>
+    <Page title="Registrations">
       <Layout>
         <Layout.Section>
           <Card padding="0">
+            <Box padding="400" paddingBlockEnd="0">
+              <Text as="h2" variant="headingMd">Registrations ({total} total)</Text>
+            </Box>
             <IndexTable
               resourceName={resourceName}
               itemCount={registrations.length}
               headings={[
-                { title: "Customer" },
-                { title: "Email" },
+                { title: "Customer name" },
+                { title: "Email address" },
                 { title: "Product" },
-                { title: "Serial #" },
-                { title: "Purchase Date" },
+                { title: "Serial number" },
+                { title: "Purchase date" },
                 { title: "Channel" },
                 { title: "Status" },
-                { title: "Warranty Expires" },
+                { title: "Warranty expires" },
                 { title: "Actions" },
               ]}
               selectable={false}

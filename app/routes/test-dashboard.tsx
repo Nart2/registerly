@@ -48,17 +48,27 @@ export default function TestDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-200 px-6 py-4">
+      <nav className="bg-white border-b border-gray-200 px-8 py-5">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <h1 className="text-xl font-bold text-gray-900">Registerly — Test Dashboard</h1>
-          <div className="flex gap-4 text-sm">
-            <span className="text-gray-500">Shop: {shop.domain}</span>
-            <span className="text-gray-500">Plan: {shop.plan}</span>
+          <h1 className="text-xl font-bold text-gray-900 tracking-tight">Registerly — Test Dashboard</h1>
+          <div className="flex gap-6 text-sm">
+            <span className="text-gray-500">Shop: <span className="text-gray-700 font-medium">{shop.domain}</span></span>
+            <span className="text-gray-500">Plan: <span className="text-gray-700 font-medium">{shop.plan}</span></span>
           </div>
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-8 py-8">
+        {/* Quick Links */}
+        <div className="flex gap-3 mb-6">
+          <a href={`/register/${shop.domain}`} className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors">
+            Registration Page
+          </a>
+          <a href="/app" className="inline-flex items-center gap-1.5 px-4 py-2 bg-white text-gray-700 text-sm font-medium rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors">
+            Admin Dashboard
+          </a>
+        </div>
+
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <StatCard title="Total Registrations" value={stats?.total || 0} />
@@ -68,8 +78,8 @@ export default function TestDashboard() {
         </div>
 
         {/* Products */}
-        <div className="card mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Products</h2>
+        <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
+          <h2 className="text-base font-semibold text-gray-900 mb-4">Products</h2>
           <div className="divide-y divide-gray-100">
             {products.map((product: any) => (
               <div key={product.id} className="py-3 flex items-center justify-between">
@@ -79,7 +89,7 @@ export default function TestDashboard() {
                     {product.warrantyMonths} months warranty — {product._count.registrations} registrations
                   </p>
                 </div>
-                <span className={`px-2 py-1 rounded text-xs font-medium ${product.isActive ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}`}>
+                <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${product.isActive ? "bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20" : "bg-gray-50 text-gray-600 ring-1 ring-inset ring-gray-500/10"}`}>
                   {product.isActive ? "Active" : "Inactive"}
                 </span>
               </div>
@@ -88,52 +98,55 @@ export default function TestDashboard() {
         </div>
 
         {/* Registrations */}
-        <div className="card">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <h2 className="text-base font-semibold text-gray-900 mb-4">
             Registrations ({registrations.length})
           </h2>
           {registrations.length === 0 ? (
-            <p className="text-gray-500">
-              No registrations yet. Test it: <a href={`/register/${shop.domain}`} className="text-brand-600 underline">Register a product</a>
-            </p>
+            <div className="text-center py-8">
+              <p className="text-gray-500 mb-3">No registrations yet.</p>
+              <a href={`/register/${shop.domain}`} className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors">
+                Test Registration Page
+              </a>
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-gray-200 text-left text-gray-500">
-                    <th className="pb-2 font-medium">Customer</th>
-                    <th className="pb-2 font-medium">Product</th>
-                    <th className="pb-2 font-medium">Serial #</th>
-                    <th className="pb-2 font-medium">Channel</th>
-                    <th className="pb-2 font-medium">Status</th>
-                    <th className="pb-2 font-medium">Warranty Expires</th>
-                    <th className="pb-2 font-medium">Portal</th>
+                  <tr className="border-b border-gray-200 text-left">
+                    <th className="pb-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Customer</th>
+                    <th className="pb-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Product</th>
+                    <th className="pb-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Serial #</th>
+                    <th className="pb-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Channel</th>
+                    <th className="pb-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="pb-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Warranty Expires</th>
+                    <th className="pb-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Portal</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {registrations.map((reg: any) => (
-                    <tr key={reg.id}>
+                    <tr key={reg.id} className="hover:bg-gray-50 transition-colors">
                       <td className="py-3">
-                        <p className="font-medium">{reg.customerName}</p>
+                        <p className="font-medium text-gray-900">{reg.customerName}</p>
                         <p className="text-gray-500 text-xs">{reg.customerEmail}</p>
                       </td>
-                      <td className="py-3">{reg.product.name}</td>
-                      <td className="py-3">{reg.serialNumber || "—"}</td>
-                      <td className="py-3">{reg.purchaseChannel}</td>
+                      <td className="py-3 text-gray-700">{reg.product.name}</td>
+                      <td className="py-3 text-gray-600 font-mono text-xs">{reg.serialNumber || "—"}</td>
+                      <td className="py-3 text-gray-600">{reg.purchaseChannel}</td>
                       <td className="py-3">
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${
-                          reg.status === "APPROVED" ? "bg-green-100 text-green-800" :
-                          reg.status === "PENDING" ? "bg-yellow-100 text-yellow-800" :
-                          "bg-red-100 text-red-800"
+                        <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${
+                          reg.status === "APPROVED" ? "bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20" :
+                          reg.status === "PENDING" ? "bg-yellow-50 text-yellow-700 ring-1 ring-inset ring-yellow-600/20" :
+                          "bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20"
                         }`}>
                           {reg.status}
                         </span>
                       </td>
-                      <td className="py-3 text-xs">
+                      <td className="py-3 text-xs text-gray-600">
                         {reg.warrantyExpiresAt ? new Date(reg.warrantyExpiresAt).toLocaleDateString() : "—"}
                       </td>
                       <td className="py-3">
-                        <a href={`/portal/${reg.id}`} className="text-brand-600 hover:underline text-xs">View</a>
+                        <a href={`/portal/${reg.id}`} className="inline-flex px-3 py-1 text-xs font-medium text-indigo-600 bg-indigo-50 rounded-md hover:bg-indigo-100 transition-colors">View Portal</a>
                       </td>
                     </tr>
                   ))}
@@ -148,11 +161,22 @@ export default function TestDashboard() {
 }
 
 function StatCard({ title, value, color }: { title: string; value: number; color?: string }) {
-  const bg = color === "green" ? "bg-green-50" : color === "yellow" ? "bg-yellow-50" : color === "red" ? "bg-red-50" : "bg-white";
+  const styles = {
+    green: "bg-green-50 border-green-200",
+    yellow: "bg-yellow-50 border-yellow-200",
+    red: "bg-red-50 border-red-200",
+  };
+  const valueColor = {
+    green: "text-green-700",
+    yellow: "text-yellow-700",
+    red: "text-red-700",
+  };
+  const bg = color ? styles[color as keyof typeof styles] : "bg-white border-gray-200";
+  const vc = color ? valueColor[color as keyof typeof valueColor] : "text-gray-900";
   return (
-    <div className={`${bg} rounded-xl border border-gray-200 p-5`}>
-      <p className="text-sm text-gray-500">{title}</p>
-      <p className="text-3xl font-bold text-gray-900 mt-1">{value}</p>
+    <div className={`${bg} rounded-xl border p-5`}>
+      <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">{title}</p>
+      <p className={`text-3xl font-bold ${vc} mt-1`}>{value}</p>
     </div>
   );
 }

@@ -7,10 +7,12 @@ import {
   Card,
   Text,
   BlockStack,
+  InlineStack,
   InlineGrid,
   Box,
   Badge,
   Banner,
+  Button,
 } from "@shopify/polaris";
 import { authenticate } from "~/shopify.server";
 import { getRegistrationStats } from "~/services/registration.server";
@@ -47,6 +49,72 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export default function DashboardPage() {
   const { shop, stats, recentRegistrations } = useLoaderData<typeof loader>();
+  const registrationLink = `${typeof window !== "undefined" ? window.location.origin : ""}/register/${shop.domain}`;
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(registrationLink);
+  };
+
+  if (stats.total === 0) {
+    return (
+      <Page title="Dashboard">
+        <BlockStack gap="500">
+          {shop.plan === "FREE" && (
+            <Banner tone="info" title="You're on the Free plan">
+              <p>Upgrade to register more products and unlock advanced features.</p>
+            </Banner>
+          )}
+
+          <Card>
+            <BlockStack gap="500">
+              <BlockStack gap="200">
+                <Text as="h2" variant="headingLg">Welcome to Registerly!</Text>
+                <Text as="p" tone="subdued">
+                  Get started in three simple steps to manage product warranties for your store.
+                </Text>
+              </BlockStack>
+
+              <BlockStack gap="400">
+                <InlineStack gap="300" blockAlign="start">
+                  <Box background="bg-fill-info" padding="200" borderRadius="200" minWidth="32px">
+                    <Text as="p" variant="headingSm" alignment="center">1</Text>
+                  </Box>
+                  <BlockStack gap="100">
+                    <Text as="p" fontWeight="semibold">Add products and enable warranties</Text>
+                    <Text as="p" tone="subdued">Sync your Shopify products and set warranty periods for each one.</Text>
+                  </BlockStack>
+                </InlineStack>
+
+                <InlineStack gap="300" blockAlign="start">
+                  <Box background="bg-fill-info" padding="200" borderRadius="200" minWidth="32px">
+                    <Text as="p" variant="headingSm" alignment="center">2</Text>
+                  </Box>
+                  <BlockStack gap="100">
+                    <Text as="p" fontWeight="semibold">Share your registration link with customers</Text>
+                    <Text as="p" tone="subdued">Send the link via email, add it to your website, or print a QR code.</Text>
+                  </BlockStack>
+                </InlineStack>
+
+                <InlineStack gap="300" blockAlign="start">
+                  <Box background="bg-fill-info" padding="200" borderRadius="200" minWidth="32px">
+                    <Text as="p" variant="headingSm" alignment="center">3</Text>
+                  </Box>
+                  <BlockStack gap="100">
+                    <Text as="p" fontWeight="semibold">Track registrations and manage claims</Text>
+                    <Text as="p" tone="subdued">Review warranty registrations and handle customer claims from your dashboard.</Text>
+                  </BlockStack>
+                </InlineStack>
+              </BlockStack>
+
+              <Box>
+                <Button variant="primary" url="/app/products">Go to Products</Button>
+              </Box>
+            </BlockStack>
+          </Card>
+        </BlockStack>
+      </Page>
+    );
+  }
 
   return (
     <Page title="Dashboard">
@@ -58,10 +126,10 @@ export default function DashboardPage() {
         )}
 
         <InlineGrid columns={{ xs: 1, sm: 2, md: 4 }} gap="400">
-          <StatCard title="Total Registrations" value={stats.total} />
-          <StatCard title="Active Warranties" value={stats.approved} tone="success" />
-          <StatCard title="Open Claims" value={stats.openClaims} tone="warning" />
-          <StatCard title="Expiring Soon" value={stats.expiringSoon} tone="attention" />
+          <StatCard title="Total Registrations" subtitle="All time" value={stats.total} />
+          <StatCard title="Active Warranties" subtitle="Currently valid" value={stats.approved} tone="success" />
+          <StatCard title="Open Claims" subtitle="Awaiting review" value={stats.openClaims} tone="warning" />
+          <StatCard title="Expiring Soon" subtitle="Within 30 days" value={stats.expiringSoon} tone="attention" />
         </InlineGrid>
 
         <Layout>
@@ -79,6 +147,9 @@ export default function DashboardPage() {
                           <BlockStack gap="100">
                             <Text as="p" fontWeight="semibold">{reg.customerName}</Text>
                             <Text as="p" tone="subdued">{reg.product.name} — {reg.customerEmail}</Text>
+                            <Text as="p" tone="subdued" variant="bodySm">
+                              Registered {new Date(reg.createdAt).toLocaleDateString()}
+                            </Text>
                           </BlockStack>
                           <Badge tone={reg.status === "APPROVED" ? "success" : reg.status === "PENDING" ? "attention" : "critical"}>
                             {reg.status}
@@ -86,6 +157,9 @@ export default function DashboardPage() {
                         </InlineGrid>
                       </Box>
                     ))}
+                    <Box paddingBlockStart="200">
+                      <Button variant="plain" url="/app/registrations">View all registrations</Button>
+                    </Box>
                   </BlockStack>
                 )}
               </BlockStack>
@@ -96,9 +170,15 @@ export default function DashboardPage() {
             <Card>
               <BlockStack gap="300">
                 <Text as="h2" variant="headingMd">Quick Actions</Text>
-                <Text as="p" tone="subdued">
-                  Registration link: {process.env.APP_URL || "https://registerly.onrender.com"}/register/{shop.domain}
-                </Text>
+                <BlockStack gap="200">
+                  <Text as="p" tone="subdued" variant="bodySm">Share this link with your customers</Text>
+                  <Box padding="300" background="bg-surface-secondary" borderRadius="200">
+                    <InlineStack gap="200" align="space-between" blockAlign="center" wrap={false}>
+                      <Text as="p" variant="bodySm" truncate>{registrationLink}</Text>
+                      <Button size="slim" onClick={handleCopyLink}>Copy</Button>
+                    </InlineStack>
+                  </Box>
+                </BlockStack>
               </BlockStack>
             </Card>
           </Layout.Section>
@@ -108,11 +188,14 @@ export default function DashboardPage() {
   );
 }
 
-function StatCard({ title, value, tone }: { title: string; value: number; tone?: string }) {
+function StatCard({ title, subtitle, value, tone }: { title: string; subtitle?: string; value: number; tone?: string }) {
   return (
     <Card>
       <BlockStack gap="200">
-        <Text as="p" tone="subdued">{title}</Text>
+        <BlockStack gap="050">
+          <Text as="p" tone="subdued">{title}</Text>
+          {subtitle && <Text as="p" tone="subdued" variant="bodySm">{subtitle}</Text>}
+        </BlockStack>
         <Text as="p" variant="headingXl" fontWeight="bold">
           {value.toLocaleString()}
         </Text>
