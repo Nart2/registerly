@@ -134,7 +134,16 @@ export default function RegisterPage() {
   const isSubmitting = navigation.state === "submitting";
   const errors = (actionData as any)?.errors || {};
   const hasErrors = Object.keys(errors).length > 0;
-  const [step, setStep] = useState(hasErrors ? 3 : 1);
+
+  // Navigate to the step containing the first error
+  function getErrorStep(): number {
+    if (errors._form) return 3;
+    if (errors.productId) return 1;
+    if (errors.customerName || errors.customerEmail) return 2;
+    if (errors.serialNumber || errors.purchaseDate || errors.purchaseChannel || errors.consent) return 3;
+    return 3;
+  }
+  const [step, setStep] = useState(hasErrors ? getErrorStep() : 1);
 
   const stepLabels = ["Choose product", "Your details", "Confirm"];
 

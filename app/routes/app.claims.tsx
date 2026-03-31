@@ -1,6 +1,6 @@
 import { json } from "@remix-run/node";
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
-import { useLoaderData, useSubmit } from "@remix-run/react";
+import { useLoaderData, useSubmit, useSearchParams } from "@remix-run/react";
 import {
   Page,
   Layout,
@@ -16,6 +16,7 @@ import {
   Box,
   Select,
   Divider,
+  Pagination,
 } from "@shopify/polaris";
 import { useState, useCallback } from "react";
 import { authenticate } from "~/shopify.server";
@@ -172,11 +173,34 @@ export default function ClaimsPage() {
     </Card>
   );
 
+  const [, setSearchParams] = useSearchParams();
+
+  const handlePageChange = useCallback(
+    (newPage: number) => {
+      setSearchParams((prev) => {
+        const params = new URLSearchParams(prev);
+        params.set("page", String(newPage));
+        return params;
+      });
+    },
+    [setSearchParams],
+  );
+
   return (
     <Page title="Claims">
       <Layout>
         <Layout.Section>
           {claimsContent}
+          {totalPages > 1 && (
+            <div style={{ display: "flex", justifyContent: "center", padding: "16px" }}>
+              <Pagination
+                hasPrevious={page > 1}
+                hasNext={page < totalPages}
+                onPrevious={() => handlePageChange(page - 1)}
+                onNext={() => handlePageChange(page + 1)}
+              />
+            </div>
+          )}
         </Layout.Section>
       </Layout>
 

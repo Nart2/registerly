@@ -14,7 +14,20 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       break;
     }
     case "CUSTOMERS_DATA_REQUEST": {
-      // GDPR: Return customer data
+      // GDPR: Export and log customer data for the merchant
+      const { customer: reqCustomer } = payload as any;
+      if (reqCustomer?.email) {
+        const shop = await prisma.shop.findUnique({ where: { domain: shopDomain } });
+        if (shop) {
+          try {
+            const { exportCustomerData } = await import("~/services/gdpr.server");
+            const data = await exportCustomerData(shop.id, reqCustomer.email);
+            console.log(`[GDPR] Customer data export for ${reqCustomer.email}:`, JSON.stringify(data));
+          } catch (e) {
+            console.error(`[GDPR] Failed to export customer data for ${reqCustomer.email}:`, e);
+          }
+        }
+      }
       return new Response(null, { status: 200 });
     }
     case "CUSTOMERS_REDACT": {
