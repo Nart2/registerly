@@ -21,21 +21,21 @@ export const PLANS: PlanConfig[] = [
   {
     name: "Starter",
     type: "STARTER",
-    price: 19,
+    price: 9.99,
     registrationsPerMonth: 500,
     features: ["500 registrations/month", "Custom email templates", "QR code generation", "Priority support"],
   },
   {
     name: "Growth",
     type: "GROWTH",
-    price: 49,
+    price: 24.99,
     registrationsPerMonth: 2000,
     features: ["2,000 registrations/month", "Custom email templates", "QR code generation", "Serial number validation", "Analytics dashboard", "Priority support"],
   },
   {
     name: "Pro",
     type: "PRO",
-    price: 99,
+    price: 49.99,
     registrationsPerMonth: -1, // unlimited
     features: ["Unlimited registrations", "Custom email templates", "QR code generation", "Serial number validation", "Analytics dashboard", "White-label portal", "Priority support"],
   },

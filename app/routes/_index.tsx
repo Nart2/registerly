@@ -265,7 +265,7 @@ export default function LandingPage() {
             <div className="rounded-2xl border border-gray-200 p-6 flex flex-col">
               <h3 className="text-lg font-semibold text-gray-900">Starter</h3>
               <div className="mt-4 flex items-baseline gap-1">
-                <span className="text-4xl font-bold text-gray-900">$19</span>
+                <span className="text-4xl font-bold text-gray-900">$9.99</span>
                 <span className="text-gray-500">/mo</span>
               </div>
               <p className="mt-2 text-sm text-gray-500">500 registrations/month</p>
@@ -283,7 +283,7 @@ export default function LandingPage() {
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-brand-600 text-white text-xs font-semibold px-3 py-1 rounded-full">Most Popular</div>
               <h3 className="text-lg font-semibold text-gray-900">Growth</h3>
               <div className="mt-4 flex items-baseline gap-1">
-                <span className="text-4xl font-bold text-gray-900">$49</span>
+                <span className="text-4xl font-bold text-gray-900">$24.99</span>
                 <span className="text-gray-500">/mo</span>
               </div>
               <p className="mt-2 text-sm text-gray-500">2,000 registrations/month</p>
@@ -300,7 +300,7 @@ export default function LandingPage() {
             <div className="rounded-2xl border border-gray-200 p-6 flex flex-col">
               <h3 className="text-lg font-semibold text-gray-900">Pro</h3>
               <div className="mt-4 flex items-baseline gap-1">
-                <span className="text-4xl font-bold text-gray-900">$99</span>
+                <span className="text-4xl font-bold text-gray-900">$49.99</span>
                 <span className="text-gray-500">/mo</span>
               </div>
               <p className="mt-2 text-sm text-gray-500">Unlimited registrations</p>
