@@ -60,7 +60,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const productId = formData.get("productId") as string;
     const warrantyMonths = parseInt(formData.get("warrantyMonths") as string) || 12;
     const isActive = formData.get("isActive") === "true";
-    const requireSerialNumber = formData.get("requireSerialNumber") === "true";
+    let requireSerialNumber = formData.get("requireSerialNumber") === "true";
+
+    // Gate serial numbers to GROWTH+ plans
+    const { hasFeature } = await import("~/services/billing.server");
+    if (requireSerialNumber && !hasFeature(shop.plan, "serialNumbers")) {
+      requireSerialNumber = false; // Silently ignore for lower plans
+    }
 
     try {
       await updateProductWarranty(productId, shop.id, { warrantyMonths, isActive, requireSerialNumber });

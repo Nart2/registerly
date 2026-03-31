@@ -28,7 +28,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   const templates = await getEmailTemplates(shop.id);
   const appUrl = process.env.APP_URL || "https://registerly.onrender.com";
-  return json({ shop: { ...shop, appUrl }, templates });
+  const { hasFeature } = await import("~/services/billing.server");
+  const canEditTemplates = hasFeature(shop.plan, "customTemplates");
+  const canEditBranding = hasFeature(shop.plan, "brandColor");
+  return json({ shop: { ...shop, appUrl }, templates, canEditTemplates, canEditBranding });
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -68,7 +71,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function SettingsPage() {
-  const { shop, templates } = useLoaderData<typeof loader>();
+  const { shop, templates, canEditTemplates, canEditBranding } = useLoaderData<typeof loader>();
   const submit = useSubmit();
   const [editingTemplate, setEditingTemplate] = useState<any>(null);
   const [brandColor, setBrandColor] = useState(shop.brandColor);
@@ -133,9 +136,15 @@ export default function SettingsPage() {
                   }}
                 />
               </InlineStack>
-              <Box>
-                <Button onClick={handleSaveBranding}>Save Branding</Button>
-              </Box>
+              {canEditBranding ? (
+                <Box>
+                  <Button onClick={handleSaveBranding}>Save Branding</Button>
+                </Box>
+              ) : (
+                <Banner tone="warning">
+                  <p>Custom brand colors are available on the Starter plan and above. <a href="/app/billing">Upgrade now</a></p>
+                </Banner>
+              )}
             </BlockStack>
           </Card>
         </Layout.Section>
@@ -156,12 +165,18 @@ export default function SettingsPage() {
 
               <Divider />
 
+              {!canEditTemplates && (
+                <Banner tone="warning">
+                  <p>Custom email templates are available on the Starter plan and above. <a href="/app/billing">Upgrade now</a></p>
+                </Banner>
+              )}
+
               {templates.map((template: any) => (
                 <BlockStack key={template.id} gap="300">
                   <InlineStack gap="200" blockAlign="center">
                     <Badge>{templateLabels[template.type] || template.type}</Badge>
                   </InlineStack>
-                  {editingTemplate?.type === template.type ? (
+                  {editingTemplate?.type === template.type && canEditTemplates ? (
                     <BlockStack gap="300">
                       <TextField
                         label="Subject"
@@ -184,9 +199,11 @@ export default function SettingsPage() {
                   ) : (
                     <BlockStack gap="200">
                       <Text as="p" tone="subdued" variant="bodySm">Subject: {template.subject}</Text>
-                      <Box>
-                        <Button size="slim" onClick={() => setEditingTemplate(template)}>Edit Template</Button>
-                      </Box>
+                      {canEditTemplates && (
+                        <Box>
+                          <Button size="slim" onClick={() => setEditingTemplate(template)}>Edit Template</Button>
+                        </Box>
+                      )}
                     </BlockStack>
                   )}
                   <Divider />

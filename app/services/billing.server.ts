@@ -16,7 +16,7 @@ export const PLANS: PlanConfig[] = [
     type: "FREE",
     price: 0,
     registrationsPerMonth: 50,
-    features: ["50 registrations/month", "Basic email templates", "QR code generation"],
+    features: ["50 registrations/month", "Standard email notifications", "QR code generation"],
   },
   {
     name: "Starter",
@@ -37,7 +37,7 @@ export const PLANS: PlanConfig[] = [
     type: "PRO",
     price: 99,
     registrationsPerMonth: -1, // unlimited
-    features: ["Unlimited registrations", "Custom email templates", "QR code generation", "Serial number validation", "Advanced analytics", "White-label portal", "Custom domain", "Priority support"],
+    features: ["Unlimited registrations", "Custom email templates", "QR code generation", "Serial number validation", "Analytics dashboard", "White-label portal", "Priority support"],
   },
 ];
 
