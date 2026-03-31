@@ -12,12 +12,18 @@ export const links = () => [{ rel: "stylesheet", href: tailwindStyles }];
 
 const claimSchema = z.object({
   issueType: z.enum(["DEFECTIVE", "DAMAGED", "MISSING_PARTS", "OTHER"]),
-  issueDescription: z.string().min(10, "Please describe the issue in at least 10 characters"),
+  issueDescription: z.string().min(10, "Please describe the issue in at least 10 characters").max(5000, "Description must be 5000 characters or less"),
 });
 
-export const loader = async ({ params }: LoaderFunctionArgs) => {
+export const loader = async ({ params, request }: LoaderFunctionArgs) => {
   const registrationId = params.registrationId;
   if (!registrationId) throw new Response("Not found", { status: 404 });
+
+  // Rate limit: 20 requests per minute per IP
+  const rl = rateLimitMiddleware(request, { maxRequests: 20, windowMs: 60_000 });
+  if (!rl.allowed) {
+    throw new Response("Too many requests", { status: 429, headers: rl.headers });
+  }
 
   const registration = await getRegistrationById(registrationId);
   if (!registration) throw new Response("Registration not found", { status: 404 });

@@ -80,7 +80,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     selectedProductId,
     serials,
     totalSerials,
-    shopId: shop.id,
   });
 };
 
@@ -160,7 +159,6 @@ export default function SerialImportPage() {
     selectedProductId: initialProductId,
     serials,
     totalSerials,
-    shopId,
   } = data as any;
   const actionData = useActionData<ActionData>();
   const submit = useSubmit();

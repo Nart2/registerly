@@ -14,11 +14,20 @@ export const links = () => [{ rel: "stylesheet", href: tailwindStyles }];
 
 const registrationSchema = z.object({
   productId: z.string().min(1, "Please select a product"),
-  customerName: z.string().min(2, "Name must be at least 2 characters"),
-  customerEmail: z.string().email("Please enter a valid email"),
-  customerPhone: z.string().optional(),
-  serialNumber: z.string().optional(),
-  purchaseDate: z.string().min(1, "Please enter a purchase date"),
+  customerName: z.string().min(2, "Name must be at least 2 characters").max(200, "Name must be 200 characters or less"),
+  customerEmail: z.string().email("Please enter a valid email").max(254, "Email must be 254 characters or less"),
+  customerPhone: z.string().max(30, "Phone must be 30 characters or less").optional(),
+  serialNumber: z.string().max(100, "Serial number must be 100 characters or less").optional(),
+  purchaseDate: z.string().min(1, "Please enter a purchase date").refine((val) => {
+    const date = new Date(val);
+    if (isNaN(date.getTime())) return false;
+    const now = new Date();
+    if (date > now) return false;
+    const fiveYearsAgo = new Date();
+    fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 5);
+    if (date < fiveYearsAgo) return false;
+    return true;
+  }, "Purchase date must be a valid date, not in the future, and within the last 5 years"),
   purchaseChannel: z.enum(["SHOPIFY", "AMAZON", "RETAIL", "OTHER"]),
   consent: z.literal("on", { errorMap: () => ({ message: "You must agree to the terms" }) }),
 });
@@ -26,6 +35,12 @@ const registrationSchema = z.object({
 export const loader = async ({ params, request }: LoaderFunctionArgs) => {
   const shopDomain = params.shopDomain;
   if (!shopDomain) throw new Response("Shop not found", { status: 404 });
+
+  // Rate limit: 30 requests per minute per IP to prevent catalog scraping
+  const rl = rateLimitMiddleware(request, { maxRequests: 30, windowMs: 60_000 });
+  if (!rl.allowed) {
+    throw new Response("Too many requests", { status: 429, headers: rl.headers });
+  }
 
   const shop = await prisma.shop.findUnique({
     where: { domain: shopDomain },

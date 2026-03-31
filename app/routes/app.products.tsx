@@ -31,7 +31,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   const products = await getProducts(shop.id);
 
-  return json({ products, shopDomain: session.shop, shopId: shop.id });
+  return json({ products, shopDomain: session.shop });
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {

@@ -3,13 +3,20 @@ import type { LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, Link, useSearchParams } from "@remix-run/react";
 import { getRegistrationById } from "~/services/registration.server";
 import { hasFeature } from "~/services/billing.server";
+import { rateLimitMiddleware } from "~/services/ratelimit.server";
 import tailwindStyles from "~/styles/tailwind.css?url";
 
 export const links = () => [{ rel: "stylesheet", href: tailwindStyles }];
 
-export const loader = async ({ params }: LoaderFunctionArgs) => {
+export const loader = async ({ params, request }: LoaderFunctionArgs) => {
   const registrationId = params.registrationId;
   if (!registrationId) throw new Response("Not found", { status: 404 });
+
+  // Rate limit: 20 requests per minute per IP
+  const rl = rateLimitMiddleware(request, { maxRequests: 20, windowMs: 60_000 });
+  if (!rl.allowed) {
+    throw new Response("Too many requests", { status: 429, headers: rl.headers });
+  }
 
   const registration = await getRegistrationById(registrationId);
   if (!registration) throw new Response("Registration not found", { status: 404 });

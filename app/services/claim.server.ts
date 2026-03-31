@@ -11,6 +11,7 @@ export interface CreateClaimInput {
 export async function createClaim(input: CreateClaimInput) {
   const registration = await prisma.registration.findUnique({
     where: { id: input.registrationId },
+    include: { product: true },
   });
 
   if (!registration) {
@@ -23,6 +24,11 @@ export async function createClaim(input: CreateClaimInput) {
 
   if (registration.warrantyExpiresAt && registration.warrantyExpiresAt < new Date()) {
     throw new Error("Warranty has expired");
+  }
+
+  // Verify the product is still active
+  if (!registration.product || !registration.product.isActive) {
+    throw new Error("Registration must be approved to submit a claim");
   }
 
   return prisma.claim.create({

@@ -224,6 +224,11 @@ export async function deleteFile(key: string): Promise<void> {
  * @returns The public URL string
  */
 export function getUploadUrl(key: string): string {
+  // Validate key format to prevent path traversal
+  if (!/^[\w.-]+$/.test(key)) {
+    throw new Error("Invalid file key format");
+  }
+
   const config = getR2Config();
   if (!config) {
     return `https://placeholder.example.com/uploads/${key}`;

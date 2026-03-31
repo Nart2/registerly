@@ -187,16 +187,25 @@ export async function cancelSubscription(admin: any, shop: { id: string; domain:
 
   for (const sub of subscriptions) {
     if (sub.status === "ACTIVE") {
-      await admin.graphql(
-        `#graphql
-        mutation appSubscriptionCancel($id: ID!) {
-          appSubscriptionCancel(id: $id) {
-            appSubscription { id }
-            userErrors { field message }
-          }
-        }`,
-        { variables: { id: sub.id } },
-      );
+      try {
+        const cancelResponse = await admin.graphql(
+          `#graphql
+          mutation appSubscriptionCancel($id: ID!) {
+            appSubscriptionCancel(id: $id) {
+              appSubscription { id }
+              userErrors { field message }
+            }
+          }`,
+          { variables: { id: sub.id } },
+        );
+        const cancelData = await cancelResponse.json();
+        const cancelResult = cancelData.data?.appSubscriptionCancel;
+        if (cancelResult?.userErrors?.length > 0) {
+          console.error("Subscription cancel userErrors:", cancelResult.userErrors);
+        }
+      } catch (cancelError) {
+        console.error("Failed to cancel subscription:", sub.id, cancelError);
+      }
     }
   }
 
@@ -235,7 +244,14 @@ export async function confirmSubscription(
     (sub: any) => sub.status === "ACTIVE" && sub.name === `Registerly ${planConfig.name}`,
   );
 
-  if (!isActive && planType !== "FREE") {
+  if (planType === "FREE") {
+    // For FREE plan downgrades, verify there are no active subscriptions
+    // (cancellation should have been done first via createSubscription)
+    const hasActive = subscriptions.some((sub: any) => sub.status === "ACTIVE");
+    if (hasActive) {
+      throw new Error("Cannot downgrade to FREE while active subscriptions exist. Cancel subscriptions first.");
+    }
+  } else if (!isActive) {
     throw new Error("Subscription not active");
   }
 

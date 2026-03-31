@@ -130,7 +130,13 @@ export async function getRegistrations(
   return { registrations, total, page, limit, totalPages: Math.ceil(total / limit) };
 }
 
-export async function getRegistrationById(id: string) {
+export async function getRegistrationById(id: string, shopId?: string) {
+  if (shopId) {
+    return prisma.registration.findFirst({
+      where: { id, shopId },
+      include: { product: true, claims: { orderBy: { createdAt: "desc" } }, shop: true },
+    });
+  }
   return prisma.registration.findUnique({
     where: { id },
     include: { product: true, claims: { orderBy: { createdAt: "desc" } }, shop: true },

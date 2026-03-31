@@ -35,6 +35,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const newPlan = url.searchParams.get("plan") as PlanType | null;
 
   if (chargeConfirmed === "true" && newPlan) {
+    // Validate referrer to mitigate CSRF — Shopify redirects always come from Shopify's domain
+    const referrer = request.headers.get("referer") || request.headers.get("referrer") || "";
+    const isFromShopify = referrer === "" || referrer.includes(".myshopify.com") || referrer.includes(".shopify.com");
+    if (!isFromShopify) {
+      console.error("Billing confirmation referrer check failed:", referrer);
+      return redirect("/app/billing");
+    }
+
     try {
       await confirmSubscription(admin, session.shop, newPlan);
     } catch (e) {

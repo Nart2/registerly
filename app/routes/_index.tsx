@@ -1,9 +1,17 @@
-import type { LoaderFunctionArgs } from "@remix-run/node";
+import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Link } from "@remix-run/react";
 import tailwindStyles from "~/styles/tailwind.css?url";
 
 export const links = () => [{ rel: "stylesheet", href: tailwindStyles }];
+
+export const meta: MetaFunction = () => [
+  { title: "Registerly — Product Warranty Management for Shopify" },
+  { name: "description", content: "Let your customers register products, track warranties, and submit claims from a beautiful, branded portal integrated into your Shopify store." },
+  { property: "og:title", content: "Registerly — Product Warranty Management for Shopify" },
+  { property: "og:description", content: "Let your customers register products, track warranties, and submit claims from a beautiful, branded portal integrated into your Shopify store." },
+  { property: "og:type", content: "website" },
+];
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
