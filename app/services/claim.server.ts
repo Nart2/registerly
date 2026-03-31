@@ -28,7 +28,7 @@ export async function createClaim(input: CreateClaimInput) {
 
   // Verify the product is still active
   if (!registration.product || !registration.product.isActive) {
-    throw new Error("Registration must be approved to submit a claim");
+    throw new Error("Product warranty is no longer available");
   }
 
   return prisma.claim.create({
