@@ -19,8 +19,13 @@ topics = [ "orders/paid" ]
 uri = "/webhooks"
 
 [[webhooks.subscriptions]]
-topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
+topics = [ "app/uninstalled" ]
 uri = "/webhooks"
+
+[webhooks.privacy_compliance]
+customer_data_request_url = "https://registerly.onrender.com/webhooks"
+customer_deletion_url = "https://registerly.onrender.com/webhooks"
+shop_deletion_url = "https://registerly.onrender.com/webhooks"
 
 [app_proxy]
 subpath = "registerly"
