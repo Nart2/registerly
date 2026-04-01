@@ -156,12 +156,12 @@ export default function SettingsPage() {
             <BlockStack gap="400">
               <BlockStack gap="100">
                 <Text as="h2" variant="headingMd">Email Templates</Text>
-                <Text as="p" tone="subdued">Customize the emails your customers receive</Text>
+                <Text as="p" tone="subdued">These emails are sent automatically to your customers when they register a product, submit a claim, or when a claim status changes. No manual action needed.</Text>
               </BlockStack>
 
               <Banner tone="info">
                 <p>
-                  Available variables: {"{{customerName}}"}, {"{{productName}}"}, {"{{serialNumber}}"}, {"{{warrantyExpiry}}"}, {"{{portalUrl}}"}, {"{{claimId}}"}, {"{{status}}"}, {"{{merchantNotes}}"}
+                  Placeholders like {"{{customerName}}"} and {"{{productName}}"} are replaced automatically with each customer's real data. Available: {"{{customerName}}"}, {"{{productName}}"}, {"{{serialNumber}}"}, {"{{warrantyExpiry}}"}, {"{{portalUrl}}"}, {"{{claimId}}"}, {"{{status}}"}, {"{{merchantNotes}}"}
                 </p>
               </Banner>
 
