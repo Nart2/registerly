@@ -1,4 +1,3 @@
-import type { Session } from "@shopify/shopify-api";
 import prisma from "~/db.server";
 import type { PlanType } from "@prisma/client";
 
@@ -99,188 +98,35 @@ export async function checkRegistrationLimit(shopId: string): Promise<{ allowed:
   };
 }
 
-// Shopify Billing API — create a recurring subscription
-export async function createSubscription(
-  admin: any,
-  shop: { id: string; domain: string },
-  planType: PlanType,
-  returnUrl: string,
-) {
-  const planConfig = getPlanConfig(planType);
-
-  if (planType === "FREE") {
-    // Cancel existing subscription and set to free
-    await cancelSubscription(admin, shop);
-    return { confirmationUrl: returnUrl };
-  }
-
-  const response = await admin.graphql(
-    `#graphql
-    mutation appSubscriptionCreate($name: String!, $lineItems: [AppSubscriptionLineItemInput!]!, $returnUrl: URL!, $test: Boolean) {
-      appSubscriptionCreate(
-        name: $name
-        lineItems: $lineItems
-        returnUrl: $returnUrl
-        test: $test
-      ) {
-        appSubscription {
-          id
-        }
-        confirmationUrl
-        userErrors {
-          field
-          message
-        }
-      }
-    }`,
-    {
-      variables: {
-        name: `Registerly ${planConfig.name}`,
-        returnUrl,
-        test: process.env.NODE_ENV !== "production", // Auto: test in dev, real charges in production
-        lineItems: [
-          {
-            plan: {
-              appRecurringPricingDetails: {
-                price: { amount: planConfig.price, currencyCode: "USD" },
-                interval: "EVERY_30_DAYS",
-              },
-            },
-          },
-        ],
-      },
-    },
-  );
-
-  const data = await response.json();
-  const result = data.data?.appSubscriptionCreate;
-
-  if (result?.userErrors?.length > 0) {
-    throw new Error(result.userErrors.map((e: any) => e.message).join(", "));
-  }
-
-  if (!result?.confirmationUrl) {
-    throw new Error("Failed to create subscription");
-  }
-
-  return { confirmationUrl: result.confirmationUrl };
+// Shopify Managed Pricing: Shopify hosts the plan selection, charge approval,
+// decline and re-approval-on-reinstall flow. A Managed Pricing app must NOT
+// create charges via the Billing API (Shopify rejects appSubscriptionCreate).
+// The app only links merchants to the Shopify-hosted pricing page and reads
+// the active subscription to gate features.
+//
+// The app handle defaults to "registerly" but can be overridden via the
+// SHOPIFY_APP_HANDLE env var — it MUST match the handle in the Partner
+// Dashboard (visible in the App Store listing URL apps.shopify.com/<handle>).
+export function getManagedPricingUrl(shopDomain: string): string {
+  const storeHandle = shopDomain.replace(/\.myshopify\.com$/i, "");
+  const appHandle = process.env.SHOPIFY_APP_HANDLE || "registerly";
+  return `https://admin.shopify.com/store/${storeHandle}/charges/${appHandle}/pricing_plans`;
 }
 
-// Cancel active subscription and revert to FREE
-export async function cancelSubscription(admin: any, shop: { id: string; domain: string }) {
-  // Find active subscription
-  const response = await admin.graphql(
-    `#graphql
-    query {
-      currentAppInstallation {
-        activeSubscriptions {
-          id
-          name
-          status
-        }
-      }
-    }`,
-  );
-
-  const data = await response.json();
-  const subscriptions = data.data?.currentAppInstallation?.activeSubscriptions || [];
-
-  for (const sub of subscriptions) {
-    if (sub.status === "ACTIVE") {
-      try {
-        const cancelResponse = await admin.graphql(
-          `#graphql
-          mutation appSubscriptionCancel($id: ID!) {
-            appSubscriptionCancel(id: $id) {
-              appSubscription { id }
-              userErrors { field message }
-            }
-          }`,
-          { variables: { id: sub.id } },
-        );
-        const cancelData = await cancelResponse.json();
-        const cancelResult = cancelData.data?.appSubscriptionCancel;
-        if (cancelResult?.userErrors?.length > 0) {
-          console.error("Subscription cancel userErrors:", cancelResult.userErrors);
-        }
-      } catch (cancelError) {
-        console.error("Failed to cancel subscription:", sub.id, cancelError);
-      }
-    }
-  }
-
-  // Revert shop plan to FREE
-  await prisma.shop.update({
-    where: { id: shop.id },
-    data: { plan: "FREE" },
-  });
-}
-
-// Confirm subscription after merchant approves — called from callback
-export async function confirmSubscription(
-  admin: any,
-  shopDomain: string,
-  planType: PlanType,
-) {
-  // Verify the subscription is active
-  const response = await admin.graphql(
-    `#graphql
-    query {
-      currentAppInstallation {
-        activeSubscriptions {
-          id
-          name
-          status
-        }
-      }
-    }`,
-  );
-
-  const data = await response.json();
-  const subscriptions = data.data?.currentAppInstallation?.activeSubscriptions || [];
-  const planConfig = getPlanConfig(planType);
-
-  const isActive = subscriptions.some(
-    (sub: any) => sub.status === "ACTIVE" && sub.name === `Registerly ${planConfig.name}`,
-  );
-
-  if (planType === "FREE") {
-    // For FREE plan downgrades, verify there are no active subscriptions
-    // (cancellation should have been done first via createSubscription)
-    const hasActive = subscriptions.some((sub: any) => sub.status === "ACTIVE");
-    if (hasActive) {
-      throw new Error("Cannot downgrade to FREE while active subscriptions exist. Cancel subscriptions first.");
-    }
-  } else if (!isActive) {
-    throw new Error("Subscription not active");
-  }
-
-  // Update shop plan
-  const shop = await prisma.shop.findUnique({ where: { domain: shopDomain } });
-  if (!shop) throw new Error("Shop not found");
-
-  await prisma.shop.update({
-    where: { id: shop.id },
-    data: { plan: planType },
-  });
-
-  return { success: true, plan: planType };
-}
-
-// Reconcile the locally stored plan with Shopify's actual subscription state.
-// Required by Shopify App Store review: after a merchant uninstalls, Shopify
-// cancels all app subscriptions. On reinstall the app must NOT keep granting a
-// previously paid plan — it must reset to FREE so the merchant is prompted to
-// approve a charge again.
+// Reconcile the locally stored plan with Shopify's real subscription state.
+// With Managed Pricing, Shopify owns the subscription lifecycle (subscribe,
+// accept, decline, cancel, and re-approval on reinstall). This makes the
+// app's stored plan follow Shopify's truth:
+//   - active subscription    -> map its plan name to our PlanType
+//   - no active subscription -> FREE (covers uninstall/reinstall and cancels)
 export async function reconcilePlanWithShopify(
   admin: any,
   shopDomain: string,
 ): Promise<void> {
   const shop = await prisma.shop.findUnique({ where: { domain: shopDomain } });
-  // Not provisioned yet (fresh install) or already free — nothing to reconcile.
-  if (!shop || shop.plan === "FREE") return;
+  if (!shop) return; // not provisioned yet (fresh install)
 
-  let hasActiveSubscription: boolean;
+  let subscriptions: Array<{ name?: string; status?: string }>;
   try {
     const response = await admin.graphql(
       `#graphql
@@ -288,21 +134,19 @@ export async function reconcilePlanWithShopify(
         currentAppInstallation {
           activeSubscriptions {
             id
+            name
             status
           }
         }
       }`,
     );
     const data = await response.json();
-    const subscriptions =
+    subscriptions =
       data.data?.currentAppInstallation?.activeSubscriptions || [];
-    hasActiveSubscription = subscriptions.some(
-      (sub: any) => sub.status === "ACTIVE",
-    );
   } catch (e) {
-    // Fail safe: if Shopify cannot be reached we do NOT downgrade, to avoid
-    // wrongly cutting off a paying merchant on a transient API error. The
-    // APP_UNINSTALLED webhook + next auth cycle still cover the reinstall case.
+    // Fail safe: on a transient Shopify API error do not change the plan, to
+    // avoid wrongly cutting off a paying merchant. The APP_UNINSTALLED webhook
+    // and the next auth / billing-page load still reconcile the reinstall case.
     console.error(
       `[billing] reconcile: could not verify subscription for ${shopDomain}:`,
       e,
@@ -310,13 +154,28 @@ export async function reconcilePlanWithShopify(
     return;
   }
 
-  if (!hasActiveSubscription) {
+  const active = subscriptions.find((sub) => sub.status === "ACTIVE");
+
+  let resolvedPlan: PlanType = "FREE";
+  if (active) {
+    const name = (active.name || "").toLowerCase();
+    const matched = PLANS.find(
+      (p) => p.type !== "FREE" && name.includes(p.name.toLowerCase()),
+    );
+    // Active paid subscription: use the matched plan. If the Shopify plan name
+    // cannot be mapped, keep the merchant's current paid plan, otherwise fall
+    // back to the lowest paid plan so paid access is never silently lost.
+    resolvedPlan =
+      matched?.type ?? (shop.plan !== "FREE" ? shop.plan : "STARTER");
+  }
+
+  if (shop.plan !== resolvedPlan) {
     await prisma.shop.update({
       where: { id: shop.id },
-      data: { plan: "FREE" },
+      data: { plan: resolvedPlan },
     });
     console.log(
-      `[billing] reconcile: no active Shopify subscription for ${shopDomain}; plan reset to FREE`,
+      `[billing] reconcile: ${shopDomain} plan ${shop.plan} -> ${resolvedPlan}`,
     );
   }
 }

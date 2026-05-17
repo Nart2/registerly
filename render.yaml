@@ -17,6 +17,10 @@ services:
         sync: false
       - key: SCOPES
         value: read_products,read_orders,write_orders
+      # Managed Pricing app handle — MUST match the handle in the Partner
+      # Dashboard / App Store listing URL (apps.shopify.com/<handle>).
+      - key: SHOPIFY_APP_HANDLE
+        value: registerly
       - key: HOST
         sync: false
       - key: APP_URL
