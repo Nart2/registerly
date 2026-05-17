@@ -8,6 +8,7 @@ import {
 import { PrismaSessionStorage } from "@shopify/shopify-app-session-storage-prisma";
 import { restResources } from "@shopify/shopify-api/rest/admin/2024-10";
 import prisma from "~/db.server";
+import { reconcilePlanWithShopify } from "~/services/billing.server";
 
 const shopify = shopifyApp({
   apiKey: process.env.SHOPIFY_API_KEY,
@@ -20,6 +21,10 @@ const shopify = shopifyApp({
   distribution: AppDistribution.AppStore,
   restResources,
   webhooks: {
+    APP_UNINSTALLED: {
+      deliveryMethod: DeliveryMethod.Http,
+      callbackUrl: "/webhooks",
+    },
     ORDERS_PAID: {
       deliveryMethod: DeliveryMethod.Http,
       callbackUrl: "/webhooks",
@@ -38,8 +43,15 @@ const shopify = shopifyApp({
     },
   },
   hooks: {
-    afterAuth: async ({ session }) => {
-      shopify.registerWebhooks({ session });
+    afterAuth: async ({ session, admin }) => {
+      await shopify.registerWebhooks({ session });
+      // On (re)install, reset a stale paid plan if Shopify has no active
+      // subscription, so the merchant is asked to approve a charge again.
+      try {
+        await reconcilePlanWithShopify(admin, session.shop);
+      } catch (e) {
+        console.error("[billing] afterAuth reconcile failed:", e);
+      }
     },
   },
   future: {

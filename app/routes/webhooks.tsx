@@ -9,6 +9,19 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const { topic, shop: shopDomain, payload } = await authenticate.webhook(request);
 
   switch (topic) {
+    case "APP_UNINSTALLED": {
+      // Shopify cancels all app subscriptions on uninstall. Clear the session
+      // and reset the plan to FREE so a later reinstall must request charge
+      // approval again (Shopify App Store billing requirement). Merchant data
+      // (products, registrations) is intentionally preserved across reinstall —
+      // full deletion happens only via the SHOP_REDACT GDPR webhook.
+      await prisma.session.deleteMany({ where: { shop: shopDomain } });
+      await prisma.shop.updateMany({
+        where: { domain: shopDomain },
+        data: { plan: "FREE" },
+      });
+      return new Response(null, { status: 200 });
+    }
     case "ORDERS_PAID": {
       await handleOrderPaid(shopDomain, payload);
       break;

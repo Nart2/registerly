@@ -19,11 +19,16 @@ import {
 } from "@shopify/polaris";
 import { authenticate } from "~/shopify.server";
 import prisma from "~/db.server";
-import { PLANS, checkRegistrationLimit, confirmSubscription, createSubscription } from "~/services/billing.server";
+import { PLANS, checkRegistrationLimit, confirmSubscription, createSubscription, reconcilePlanWithShopify } from "~/services/billing.server";
 import type { PlanType } from "@prisma/client";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session, admin } = await authenticate.admin(request);
+
+  // Ensure the displayed plan reflects Shopify's real subscription state
+  // (handles uninstall/reinstall and externally cancelled subscriptions).
+  await reconcilePlanWithShopify(admin, session.shop);
+
   const shop = await prisma.shop.findUnique({ where: { domain: session.shop } });
   if (!shop) throw new Response("Shop not found", { status: 404 });
 

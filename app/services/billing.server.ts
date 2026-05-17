@@ -267,6 +267,60 @@ export async function confirmSubscription(
   return { success: true, plan: planType };
 }
 
+// Reconcile the locally stored plan with Shopify's actual subscription state.
+// Required by Shopify App Store review: after a merchant uninstalls, Shopify
+// cancels all app subscriptions. On reinstall the app must NOT keep granting a
+// previously paid plan — it must reset to FREE so the merchant is prompted to
+// approve a charge again.
+export async function reconcilePlanWithShopify(
+  admin: any,
+  shopDomain: string,
+): Promise<void> {
+  const shop = await prisma.shop.findUnique({ where: { domain: shopDomain } });
+  // Not provisioned yet (fresh install) or already free — nothing to reconcile.
+  if (!shop || shop.plan === "FREE") return;
+
+  let hasActiveSubscription: boolean;
+  try {
+    const response = await admin.graphql(
+      `#graphql
+      query {
+        currentAppInstallation {
+          activeSubscriptions {
+            id
+            status
+          }
+        }
+      }`,
+    );
+    const data = await response.json();
+    const subscriptions =
+      data.data?.currentAppInstallation?.activeSubscriptions || [];
+    hasActiveSubscription = subscriptions.some(
+      (sub: any) => sub.status === "ACTIVE",
+    );
+  } catch (e) {
+    // Fail safe: if Shopify cannot be reached we do NOT downgrade, to avoid
+    // wrongly cutting off a paying merchant on a transient API error. The
+    // APP_UNINSTALLED webhook + next auth cycle still cover the reinstall case.
+    console.error(
+      `[billing] reconcile: could not verify subscription for ${shopDomain}:`,
+      e,
+    );
+    return;
+  }
+
+  if (!hasActiveSubscription) {
+    await prisma.shop.update({
+      where: { id: shop.id },
+      data: { plan: "FREE" },
+    });
+    console.log(
+      `[billing] reconcile: no active Shopify subscription for ${shopDomain}; plan reset to FREE`,
+    );
+  }
+}
+
 export async function incrementRegistrationCount(shopId: string): Promise<void> {
   const now = new Date();
   const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
